@@ -9,7 +9,7 @@ struct Node
 end
 
 # Methode zum Ausgeben der Knotenschlüssel
-function keys(node::Node)
+function keys(node::Node)::Vector{Any}
     if node.left === nothing && node.right === nothing
         return [node.key]
     elseif node.left === nothing
@@ -55,4 +55,5 @@ println(height(ex1)) # prints 1
 println(keys(ex1)) # prints 1-element Vector{Any}: [1]
 println(keys(ex2)) # prints 4-element Vector{Any}: [2, 2, 2, 3]
 println(leaves(ex2)) # prints 2
+
 =#

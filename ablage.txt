@@ -1,0 +1,24 @@
+Bitte implementiere folgende Aufgabe in Julia:
+In dieser Programmieraufgabe geht es um eine erste Implementierung binärer Bäume. Schreiben
+Sie hierfür einen Type Node mit den Attributen:
+• key (ganze Zahl)
+• left (Instanz des Types Node oder Nothing)
+• right (Instanz der Types Node oder Nothing)
+die auf die ganzzahlige Knotenschlüssel, das linke und das rechte Kind verweisen. Ein Binärbaum
+wird dann durch seinen Wurzelknoten dargestellt. Implementieren Sie die folgenden Methoden:
+(a) Konstruktor Node(key, left, right).
+(b) Konstruktor Node(key).
+
+
+(c) keys(Node) gibt die Knotenschlüssel seines Baums in einem Vector zurück. 
+(d) height(Node) gibt die Höhe des Knotens in seinem Baum zurück.
+(e) leaves(Node) gibt die Anzahl der Blätter seines Baums zurück. 
+
+Beispielaufrufe:
+ex1 = Node(1)
+ex2 = Node(2,Node(2,nothing,nothing),Node(2,nothing,Node(3)))
+print(height(ex2)) # prints 3
+print(height(ex1)) # prints 1
+print(keys(ex1)) # prints 1-element Vector{Any}: 1
+print(keys(ex2)) # prints 4-element Vector{Any}: 2 2 2 3
+print(leaves(ex2)) # prints 2
