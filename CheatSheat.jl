@@ -114,7 +114,7 @@ else
     println("Stay Home")
 end
 
-@printf("true || false = %s\n", true || false ? "true" : "false")
+s
 @printf("!true = %s\n", !true ? "true" : "false")
 
 age = 55
