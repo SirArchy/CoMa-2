@@ -52,26 +52,36 @@ function union!(P::Partition, tuple1::Tuple{Int,Int}, tuple2::Tuple{Int,Int})
     end
 end
 
+#=
 S = TupleSet([(0,3),(0,1),(1,3),(1,0)]);
 P = Partition(S);
 
 println(union!(P,(1,3),(0,1)).Sets)
-# 3−elemen t Vec tor {Vec tor {Tuple { In t64 , I n t 6 4 }}} :
+# 3−element Vector {Vector {Tuple { Int64 , Int64 }}} :
 # [ ( 0 , 3 ) ]
 # [ ( 1 , 0 ) ]
 # [ ( 0 , 1 ) , ( 1 , 3 ) ]
 println(union!(P,(0,1),(0,3)).Sets)
-# 2−elemen t Vec tor {Vec tor {Tuple { In t64 , I n t 6 4 }}} :
+# 2−element Vector {Vector {Tuple { Int64 , Int64 }}} :
 # [ ( 1 , 0 ) ]
 # [ ( 0 , 1 ) , ( 0 , 3 ) , ( 1 , 3 ) ]
 println(FindSet(P,(0,3)))
 # ( 0 , 1 )
 println(MakeSet(P,(300,1)).Sets)
-# 3−elemen t Vec tor {Vec tor {Tuple { In t64 , I n t 6 4 }}} :
+# 3−element Vector {Vector {Tuple { Int64 , Int64 }}} :
 # [ ( 1 , 0 ) ]
 # [ ( 0 , 1 ) , ( 0 , 3 ) , ( 1 , 3 ) ]
 # [ ( 3 0 0 , 1 ) ]
 println(union!(P,(300,1),(0,1)).Sets)
-# 2−elemen t Vec tor {Vec tor {Tuple { In t64 , I n t 6 4 }}} :
+# 2−element Vector {Vector {Tuple { Int64 , Int64 }}} :
 # [ ( 1 , 0 ) ]
 # [ ( 0 , 1 ) , ( 0 , 3 ) , ( 1 , 3 ) , ( 3 0 0 , 1 ) ]
+=#
+
+
+#= Input: [(1,3),(2,1)]
+Erwarteter Output: [(1, 3), (2, 1), (457, 23), (457, 501), (342, 11), (110, 1), (110, 2)]
+All Good
+(110, 1)
+=#
+
