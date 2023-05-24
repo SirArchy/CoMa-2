@@ -12,25 +12,25 @@ end
 
 # Erzeugt eine Partition von V in ein-elementige Mengen
 function Partition(V::Vector{Tuple{Int, Int}})
-    Sets = TupleSet.(V)
-    return Partition(Sets)
+    sets = TupleSet.(V)
+    return Partition(sets)
 end
 
 # Fügt der Liste Sets ein Set-Objekt hinzu, das mit dem Tupel (x,y) initialisiert wird
 function MakeSet(P::Partition, tuple::Tuple{Int, Int})
     # Überprüfen, ob das Tupel bereits in einem TupleSet enthalten ist
-    for set in P.Sets
+    for set in P.sets
         if tuple in set.elements
             return
         end
     end
     # Das Tupel ist nicht enthalten, fügen Sie es hinzu
-    push!(P.Sets, TupleSet([tuple]))
+    push!(P.sets, TupleSet([tuple]))
 end
 
 # Gibt das Repräsentanten-Tupel S[0] zurück
 function FindSet(P::Partition, tuple::Tuple{Int, Int})
-    for set in P.Sets
+    for set in P.sets
         if tuple in set.elements
             return set.elements[1]
         end
@@ -45,7 +45,7 @@ function union!(P::Partition, tuple1::Tuple{Int, Int}, tuple2::Tuple{Int, Int})
     set2 = nothing
     
     # Finden Sie die Sets, die tuple1 und tuple2 enthalten
-    for set in P.Sets
+    for set in P.sets
         if tuple1 in set.elements
             set1 = set
         elseif tuple2 in set.elements
@@ -63,9 +63,10 @@ function union!(P::Partition, tuple1::Tuple{Int, Int}, tuple2::Tuple{Int, Int})
     
     # Entfernen Sie die alten Sets und fügen Sie ein neues Set hinzu
     new_elements = sort(unique(vcat(set1.elements, set2.elements)))
-    P.Sets = [set for set in P.Sets if !(set == set1 || set == set2)]
-    push!(P.Sets, TupleSet(new_elements))
+    P.sets = [set for set in P.sets if !(set == set1 || set == set2)]
+    push!(P.sets, TupleSet(new_elements))
 end
+
 
 S = TupleSet([(0,3),(0,1),(1,3),(1,0)])
 P = Partition(S)
