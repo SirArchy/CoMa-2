@@ -10,7 +10,7 @@ end
 
 function dfs(node::Node, sorted::Vector{Node})
     if node.color == :gray
-        error("Der Graph enthält einen Kreis!")
+        error("Der Graph enthaelt einen Kreis!")
     elseif node.color == :white
         node.color = :gray
         for successor in node.successors
@@ -30,3 +30,9 @@ function top_sort(G::Vector{Node})
     end
     return reverse(sorted)
 end
+
+
+#=
+Input: [("A", [2]), ("B", [1])]
+Erwarteter Output: Der Graph enthaelt einen Kreis!
+=#

@@ -1,58 +1,101 @@
-struct Node
-    key::Int
-    left::Union{Node, Nothing}
-    right::Union{Node, Nothing}
+struct TupleSet
+    elements::Vector{Tuple{Int, Int}}
     
-    function Node(key::Int, left::Union{Node, Nothing}=nothing, right::Union{Node, Nothing}=nothing)
-        new(key, left, right)
+    function TupleSet(V::Vector{Tuple{Int, Int}})
+        new(sort(V))
     end
 end
 
-# Methode zum Ausgeben der Knotenschlüssel
-function keys(node::Node)
-    if node.left === nothing && node.right === nothing
-        return [node.key]
-    elseif node.left === nothing
-        return vcat([node.key], keys(node.right))
-    elseif node.right === nothing
-        return vcat(keys(node.left), [node.key])
-    else
-        return vcat(keys(node.left), [node.key], keys(node.right))
-    end
+struct Partition
+    Sets::Vector{TupleSet}
 end
 
-# Methode zur Berechnung der Höhe des Knotens
-function height(node::Node)
-    if node.left === nothing && node.right === nothing
-        return 1
-    elseif node.left === nothing
-        return 1 + height(node.right)
-    elseif node.right === nothing
-        return 1 + height(node.left)
-    else
-        return 1 + max(height(node.left), height(node.right))
-    end
+# Erzeugt eine Partition von V in ein-elementige Mengen
+function Partition(V::Vector{Tuple{Int, Int}})
+    Sets = TupleSet.(V)
+    return Partition(Sets)
 end
 
-# Methode zur Berechnung der Anzahl der Blätter
-function leaves(node::Node)
-    if node.left === nothing && node.right === nothing
-        return 1
-    elseif node.left === nothing
-        return leaves(node.right)
-    elseif node.right === nothing
-        return leaves(node.left)
-    else
-        return leaves(node.left) + leaves(node.right)
+# Fügt der Liste Sets ein Set-Objekt hinzu, das mit dem Tupel (x,y) initialisiert wird
+function MakeSet(P::Partition, tuple::Tuple{Int, Int})
+    # Überprüfen, ob das Tupel bereits in einem TupleSet enthalten ist
+    for set in P.Sets
+        if tuple in set.elements
+            return
+        end
     end
+    # Das Tupel ist nicht enthalten, fügen Sie es hinzu
+    push!(P.Sets, TupleSet([tuple]))
 end
 
-#= Beispielaufrufe
-ex1 = Node(1)
-ex2 = Node(2,Node(2,nothing,nothing),Node(2,nothing,Node(3)))
-println(height(ex2)) # prints 3
-println(height(ex1)) # prints 1
-println(keys(ex1)) # prints 1-element Vector{Any}: [1]
-println(keys(ex2)) # prints 4-element Vector{Any}: [2, 2, 2, 3]
-println(leaves(ex2)) # prints 2
+# Gibt das Repräsentanten-Tupel S[0] zurück
+function FindSet(P::Partition, tuple::Tuple{Int, Int})
+    for set in P.Sets
+        if tuple in set.elements
+            return set.elements[1]
+        end
+    end
+    # Das Tupel ist nicht enthalten
+    return -1
+end
+
+# Vereinigt zwei Sets
+function union!(P::Partition, tuple1::Tuple{Int, Int}, tuple2::Tuple{Int, Int})
+    set1 = nothing
+    set2 = nothing
+    
+    # Finden Sie die Sets, die tuple1 und tuple2 enthalten
+    for set in P.Sets
+        if tuple1 in set.elements
+            set1 = set
+        elseif tuple2 in set.elements
+            set2 = set
+        end
+        if !(isnothing(set1) || isnothing(set2))
+            break
+        end
+    end
+    
+    # Wenn tuple1 und tuple2 in keinem Set enthalten sind, machen Sie nichts
+    if isnothing(set1) || isnothing(set2)
+        return
+    end
+    
+    # Entfernen Sie die alten Sets und fügen Sie ein neues Set hinzu
+    new_elements = sort(unique(vcat(set1.elements, set2.elements)))
+    P.Sets = [set for set in P.Sets if !(set == set1 || set == set2)]
+    push!(P.Sets, TupleSet(new_elements))
+end
+
+S = TupleSet([(0,3),(0,1),(1,3),(1,0)])
+P = Partition(S)
+
+println(union!(P,(1,3),(0,1)).Sets)
+# 3−element Vector {Vector {Tuple { Int64 , Int64 }}} :
+# [(0,3)]
+# [(1,0)]
+# [(0,1),(1,3)]
+println(union!(P,(0,1),(0,3)).Sets)
+# 2−element Vector {Vector {Tuple { Int64 , Int64 }}} :
+# [(1,0)]
+# [(0,1),(0,3),(1,3)]
+println(FindSet(P,(0,3)))
+# (0,1)
+println(MakeSet(P,(300,1)).Sets)
+# 3−element Vector {Vector {Tuple { Int64 , Int64 }}} :
+# [(1,0)]
+# [(0,1),(0,3),(1,3)]
+# [(300,1)]
+println(union!(P,(300,1),(0,1)).Sets)
+# 2−element Vector {Vector {Tuple { Int64 , Int64 }}} :
+# [(1,0)]
+# [(0,1),(0,3),(1,3),(300,1)]
+#=
+=#
+
+
+#= Input: [(1,3),(2,1)]
+Erwarteter Output: [(1, 3), (2, 1), (457, 23), (457, 501), (342, 11), (110, 1), (110, 2)]
+All Good
+(110, 1)
 =#
