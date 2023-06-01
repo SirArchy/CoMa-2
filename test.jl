@@ -1,102 +1,81 @@
-struct TupleSet
-    elements::Vector{Tuple{Int, Int}}
-    
-    function TupleSet(V::Vector{Tuple{Int, Int}})
-        new(sort(V))
+# Definition des Types FactorTree
+struct FactorTree
+    value::Int
+    left::Union{Int, FactorTree}
+    right::Union{Int, FactorTree}
+end
+
+# Konstruktor für den FactorTree-Typ
+function FactorTree(v::Int)
+    return FactorTree(v, 0, 0)
+end
+
+# Hilfsfunktion zur Berechnung der Primfaktorzerlegung
+function primeFactors(n::Int)
+    factors = Dict{Int, Int}()
+    d = 2
+    while d * d <= n
+        if n % d == 0
+            count = 0
+            while n % d == 0
+                n = div(n, d)
+                count += 1
+            end
+            factors[d] = count
+        end
+        d += 1
+    end
+    if n > 1
+        factors[n] = 1
+    end
+    return factors
+end
+
+# Funktion zur Berechnung der Primfaktorzerlegung des Wurzelknotens eines Zerlegungsbaums
+function getFactors(t::FactorTree)
+    return primeFactors(t.value)
+end
+
+# Funktion zur Rückgabe der Struktur des Zerlegungsbaums als String
+function getShape(t::FactorTree)
+    if t.left == 0 && t.right == 0
+        return "p"
+    elseif t.left isa Int && t.right isa Int
+        return "p2"
+    else
+        return "f(" * getShape(t.left) * "|" * getShape(t.right) * ")"
     end
 end
 
-struct Partition
-    Sets::Vector{TupleSet}
+# Funktion zum Vergleichen der Strukturen von zwei Zerlegungsbäumen
+function compareShape(t::FactorTree, h::FactorTree)
+    return getShape(t) == getShape(h)
 end
 
-# Erzeugt eine Partition von V in ein-elementige Mengen
-function Partition(V::Vector{Tuple{Int, Int}})
-    sets = TupleSet.(V)
-    return Partition(sets)
-end
-
-# Fügt der Liste Sets ein Set-Objekt hinzu, das mit dem Tupel (x,y) initialisiert wird
-function MakeSet(P::Partition, tuple::Tuple{Int, Int})
-    # Überprüfen, ob das Tupel bereits in einem TupleSet enthalten ist
-    for set in P.sets
-        if tuple in set.elements
-            return
+# Funktion zur Berechnung aller Zerlegungsstrukturen von Zahlen kleiner als n
+function computeShapes(n::Int)
+    shapes = Dict{String, Vector{Int}}()
+    for i in 1:n
+        t = FactorTree(i)
+        shape = getShape(t)
+        if haskey(shapes, shape)
+            push!(shapes[shape], i)
+        else
+            shapes[shape] = [i]
         end
     end
-    # Das Tupel ist nicht enthalten, fügen Sie es hinzu
-    push!(P.sets, TupleSet([tuple]))
+    return shapes
 end
 
-# Gibt das Repräsentanten-Tupel S[0] zurück
-function FindSet(P::Partition, tuple::Tuple{Int, Int})
-    for set in P.sets
-        if tuple in set.elements
-            return set.elements[1]
-        end
-    end
-    # Das Tupel ist nicht enthalten
-    return -1
-end
-
-# Vereinigt zwei Sets
-function union!(P::Partition, tuple1::Tuple{Int, Int}, tuple2::Tuple{Int, Int})
-    set1 = nothing
-    set2 = nothing
-    
-    # Finden Sie die Sets, die tuple1 und tuple2 enthalten
-    for set in P.sets
-        if tuple1 in set.elements
-            set1 = set
-        elseif tuple2 in set.elements
-            set2 = set
-        end
-        if !(isnothing(set1) || isnothing(set2))
-            break
-        end
-    end
-    
-    # Wenn tuple1 und tuple2 in keinem Set enthalten sind, machen Sie nichts
-    if isnothing(set1) || isnothing(set2)
-        return
-    end
-    
-    # Entfernen Sie die alten Sets und fügen Sie ein neues Set hinzu
-    new_elements = sort(unique(vcat(set1.elements, set2.elements)))
-    P.sets = [set for set in P.sets if !(set == set1 || set == set2)]
-    push!(P.sets, TupleSet(new_elements))
-end
-
-
-S = TupleSet([(0,3),(0,1),(1,3),(1,0)])
-P = Partition(S)
-
-println(union!(P,(1,3),(0,1)).Sets)
-# 3−element Vector {Vector {Tuple { Int64 , Int64 }}} :
-# [(0,3)]
-# [(1,0)]
-# [(0,1),(1,3)]
-println(union!(P,(0,1),(0,3)).Sets)
-# 2−element Vector {Vector {Tuple { Int64 , Int64 }}} :
-# [(1,0)]
-# [(0,1),(0,3),(1,3)]
-println(FindSet(P,(0,3)))
-# (0,1)
-println(MakeSet(P,(300,1)).Sets)
-# 3−element Vector {Vector {Tuple { Int64 , Int64 }}} :
-# [(1,0)]
-# [(0,1),(0,3),(1,3)]
-# [(300,1)]
-println(union!(P,(300,1),(0,1)).Sets)
-# 2−element Vector {Vector {Tuple { Int64 , Int64 }}} :
-# [(1,0)]
-# [(0,1),(0,3),(1,3),(300,1)]
 #=
-=#
+# Beispielverwendung
+t = FactorTree(20)
+println(getFactors(t))
+println(getShape(t))
 
+t2 = FactorTree(945)
+t3 = FactorTree(72)
+println(compareShape(t2, t3))
 
-#= Input: [(1,3),(2,1)]
-Erwarteter Output: [(1, 3), (2, 1), (457, 23), (457, 501), (342, 11), (110, 1), (110, 2)]
-All Good
-(110, 1)
+println(computeShapes(10))
 =#
