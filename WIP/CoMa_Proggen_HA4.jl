@@ -34,7 +34,7 @@ end
 
 S = TupleSet([(0,3),(0,1),(1,3),(1,0)])
 P = Partition(S)
-
+#=
 println(union!(P,(1,3),(0,1)).Set)
 # 3−element Vector {Vector {Tuple { Int64 , Int64 }}} :
 # [(0,3)]
@@ -64,4 +64,4 @@ Erwarteter Output: [(1, 3), (2, 1), (457, 23), (457, 501), (342, 11), (110, 1), 
 All Good
 (110, 1)
 =#
-
+=#

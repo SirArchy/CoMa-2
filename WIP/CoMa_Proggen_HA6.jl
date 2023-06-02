@@ -6,135 +6,86 @@ struct Node
 end
 
 function getKeyList(tree::Node)::Vector{Int}
-    keys = Vector{Int}()
-    _getKeyList(tree, keys)
-    return keys
-end
-
-function _getKeyList(node::Node, keys::Vector{Int})
-    if node == nothing
-        return
-    end
-    _getKeyList(node.left, keys)
-    push!(keys, node.key)
-    _getKeyList(node.right, keys)
-end
-
-function find(node::Node, k::Int)::Union{Node, Nothing}
-    if node == nothing || node.key == k
-        return node
-    elseif k < node.key
-        return find(node.left, k)
+    if tree === nothing
+        return []
     else
-        return find(node.right, k)
+        return [getKeyList(tree.left)..., tree.key, getKeyList(tree.right)...]
     end
 end
 
-function min(node::Node)::Int
-    while node.left != nothing
-        node = node.left
+function find(tree::Node, k::Int)::Union{Node, Nothing}
+    if tree === nothing || tree.key == k
+        return tree
+    elseif k < tree.key
+        return find(tree.left, k)
+    else
+        return find(tree.right, k)
     end
-    return node.key
+end
+
+function min(tree::Node)::Int
+    while tree.left !== nothing
+        tree = tree.left
+    end
+    return tree.key
 end
 
 function fromString(str::String)::Node
-    stack = Vector{Node}()
-    current_node = nothing
-    current_value = ""
-    is_left_child = false
-    
-    for char in str
-        if char == '('
-            if current_value != ""
-                key = parse(Int, current_value)
-                new_node = Node(key, nothing, nothing, nothing)
-                
-                if isempty(stack)
-                    current_node = new_node
-                else
-                    if is_left_child
-                        stack[end].left = new_node
-                    else
-                        stack[end].right = new_node
-                    end
-                    new_node.parent = stack[end]
-                    current_node = new_node
-                end
-                
-                current_value = ""
-            end
-            
-            push!(stack, current_node)
-            is_left_child = true
-        elseif char == ','
-            if current_value != ""
-                key = parse(Int, current_value)
-                new_node = Node(key, nothing, nothing, nothing)
-                
-                if is_left_child
-                    stack[end].left = new_node
-                else
-                    stack[end].right = new_node
-                end
-                new_node.parent = stack[end]
-                current_node = new_node
-                
-                current_value = ""
-                is_left_child = false
-            end
-        elseif char == ')'
-            if current_value != ""
-                key = parse(Int, current_value)
-                new_node = Node(key, nothing, nothing, nothing)
-                
-                if is_left_child
-                    stack[end].left = new_node
-                else
-                    stack[end].right = new_node
-                end
-                new_node.parent = stack[end]
-                current_node = new_node
-                
-                current_value = ""
-            end
-            
-            pop!(stack)
-            if !isempty(stack)
-                current_node = stack[end]
-                is_left_child = false
-            end
-        else
-            current_value *= char
+    if isempty(str)
+        return nothing
+    end
+    open_bracket = findfirst(c -> c == '(', str)
+    close_bracket = findfirst(c -> c == ')', str)
+    key = parse(Int, str[1:open_bracket-1])
+    left_str = str[open_bracket+1:close_bracket-1]
+    right_str = str[close_bracket+2:end]
+    left = fromString(left_str)
+    right = fromString(right_str)
+    node = Node(key, left, right, nothing)
+
+    # Überprüfen, ob es sich um einen Suchbaum handelt
+    if left !== nothing
+        if left.key >= key
+            println("Der Baum ist kein Suchbaum!")
         end
+        left.parent = node
     end
-    
-    if current_value != ""
-        key = parse(Int, current_value)
-        new_node = Node(key, nothing, nothing, nothing)
-        
-        if is_left_child
-            stack[end].left = new_node
-        else
-            stack[end].right = new_node
+    if right !== nothing
+        if right.key <= key
+            println("Der Baum ist kein Suchbaum!")
         end
-        new_node.parent = stack[end]
-        current_node = new_node
+        right.parent = node
     end
-    
-    if current_node == nothing
-        println("Der Baum ist kein Suchbaum!")
-    end
-    
-    return current_node
+
+    return node
 end
 
 
-#=
-tree = 13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))|1
-# Erwarteter Output: fromString() korrekt: true
+# Beispielaufrufe
+tree2 = "3(2(1,2),5(4,))"
+tree2 = fromString(tree2)
+min2 = min(tree2)
+println(min2)
+println(getKeyList(tree2))
+println(find(tree2, min2))
+tree3 = "4(1,5)"
+tree3 = fromString(tree3)
+min3 = min(tree3)
+println(min3)
+println(getKeyList(tree3))
+println(find(tree3, min3))
+tree1 = "13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))"
+tree1 = fromString(tree1)
+min1 = min(tree1)
+println(min1)
+println(getKeyList(tree1))
+println(find(tree1, min1))
+# Erwarteter Output: 
+# fromString() korrekt: true
 # min: 13
 # KeyList: [13, 52, 57, 57, 57, 57, 57, 57, 57, 58, 71]
 # find the minimum: 13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))
 # unable to find 0: true
 # n_nodes: 11
+#=
 =#
