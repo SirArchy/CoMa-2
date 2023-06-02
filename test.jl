@@ -32,22 +32,35 @@ function primeFactors(n::Int)
 end
 
 # Funktion zur Berechnung der Primfaktorzerlegung des Wurzelknotens eines Zerlegungsbaums
-function getFactors(t::FactorTree)
+function getFactor(t::FactorTree)
     return primeFactors(t.value)
 end
 
-# Funktion zur Rückgabe der Struktur des Zerlegungsbaums als String
+# Funktion zur Berechnung der Struktur eines Zerlegungsbaums
 function getShape(t::FactorTree)
-    if t.left == 0 && t.right == 0
-        return "p"
-    elseif t.left isa Int && t.right isa Int
-        return "p2"
+    left_shape = ""
+    right_shape = ""
+    
+    if typeof(t.left) == FactorTree
+        left_shape = getShape(t.left)
+    end
+    
+    if typeof(t.right) == FactorTree
+        right_shape = getShape(t.right)
+    end
+    
+    if left_shape != "" && right_shape != ""
+        return "f($left_shape|$right_shape)"
+    elseif left_shape != ""
+        return "f($left_shape|p)"
+    elseif right_shape != ""
+        return "f(p|$right_shape)"
     else
-        return "f(" * getShape(t.left) * "|" * getShape(t.right) * ")"
+        return "p"
     end
 end
 
-# Funktion zum Vergleichen der Strukturen von zwei Zerlegungsbäumen
+# Funktion zum Vergleichen der Struktur zweier Zerlegungsbäume
 function compareShape(t::FactorTree, h::FactorTree)
     return getShape(t) == getShape(h)
 end
@@ -55,9 +68,11 @@ end
 # Funktion zur Berechnung aller Zerlegungsstrukturen von Zahlen kleiner als n
 function computeShapes(n::Int)
     shapes = Dict{String, Vector{Int}}()
+    
     for i in 1:n
         t = FactorTree(i)
         shape = getShape(t)
+        
         if haskey(shapes, shape)
             push!(shapes[shape], i)
         else
@@ -67,15 +82,74 @@ function computeShapes(n::Int)
     return shapes
 end
 
-#=
-# Beispielverwendung
+# Beispielaufrufe
 t = FactorTree(20)
-println(getFactors(t))
-println(getShape(t))
-
+println(getFactor(t))  # Dict{Int64, Int64} with 2 entries: 5 => 1, 2 => 2
+println(getShape(t))  # "f(p2|p)"
 t2 = FactorTree(945)
 t3 = FactorTree(72)
-println(compareShape(t2, t3))
+println(compareShape(t2, t3))  # true
+println(computeShapes(10))  # Dict{String, Vector{Int64}} with 3 entries: "p2" => [4, 6, 9, 10], "f(p|p2)" => [8], "p" => [1, 2, 3, 5, 7]
 
-println(computeShapes(10))
+
+#✅
+#❌
+# Beispielverwendung
+t1 = FactorTree(20)
+t2 = FactorTree(945)
+t4 = FactorTree(72)
+t5 = FactorTree(6375)
+t6 = FactorTree(216)
+t7 = FactorTree(112)
+
+#(945, 2205, 2835, 112) 
+#(2396, 4852, 7188, 2024)
+#(8909, 6411, 26727, 2625)
+println(getShape(t1))
+println(getShape(t2))
+println(compareShape(t1, t2))
+println(getShape(t1))
+println(getShape(t4))
+println(compareShape(t1, t4))
+println(compareShape(t4, t2))
+println(compareShape(t4, t6))
+println(compareShape(t5, t7))
+println(compareShape(t4, t7))
+#=
+println(computeShapes(20))
+println(computeShapes(945))
+println(computeShapes(72))
+println(computeShapes(6375))
+println(computeShapes(216))
+println(computeShapes(112))
+=#
+
+#=
+Zusammenfassung:
+Test Summary:                       | Pass  Fail  Total
+PA05                                |   36     8     44
+  input = (72, 6375, 216, 112)      |    9     2     11
+    Zerlegungsbaum                  |    9     2     11  1.0s
+      Primfaktorzerlegung           |    3            3  0.0s
+      getShape                      |    2            2  0.0s
+      compareShape                  |    2     1      3  0.9s
+      computeShapes                 |    2     1      3  0.1s
+  input = (945, 2205, 2835, 112)    |    9     2     11
+    Zerlegungsbaum                  |    9     2     11  0.0s
+      Primfaktorzerlegung           |    3            3  0.0s
+      getShape                      |    2            2  0.0s
+      compareShape                  |    2     1      3  0.0s
+      computeShapes                 |    2     1      3  0.0s
+  input = (2396, 4852, 7188, 2024)  |    9     2     11
+    Zerlegungsbaum                  |    9     2     11  0.0s
+      Primfaktorzerlegung           |    3            3  0.0s
+      getShape                      |    2            2  0.0s
+      compareShape                  |    2     1      3  0.0s
+      computeShapes                 |    2     1      3  0.0s
+  input = (8909, 6411, 26727, 2625) |    9     2     11
+    Zerlegungsbaum                  |    9     2     11  0.0s
+      Primfaktorzerlegung           |    3            3  0.0s
+      getShape                      |    2            2  0.0s
+      compareShape                  |    2     1      3  0.0s
+      computeShapes                 |    2     1      3  0.0s
 =#

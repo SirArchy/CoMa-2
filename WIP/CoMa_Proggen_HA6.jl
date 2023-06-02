@@ -12,7 +12,7 @@ function getKeyList(tree::Node)::Vector{Int}
 end
 
 function _getKeyList(node::Node, keys::Vector{Int})
-    if node == nothing
+    if node === nothing
         return
     end
     _getKeyList(node.left, keys)
@@ -21,7 +21,7 @@ function _getKeyList(node::Node, keys::Vector{Int})
 end
 
 function find(node::Node, k::Int)::Union{Node, Nothing}
-    if node == nothing || node.key == k
+    if node === nothing || node.key == k
         return node
     elseif k < node.key
         return find(node.left, k)
@@ -31,7 +31,7 @@ function find(node::Node, k::Int)::Union{Node, Nothing}
 end
 
 function min(node::Node)::Int
-    while node.left != nothing
+    while node.left !== nothing
         node = node.left
     end
     return node.key
@@ -121,7 +121,7 @@ function fromString(str::String)::Node
         current_node = new_node
     end
     
-    if current_node == nothing
+    if current_node === nothing
         println("Der Baum ist kein Suchbaum!")
     end
     
@@ -130,6 +130,8 @@ end
 
 
 #=
+#✅
+#❌
 tree = 13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))|1
 # Erwarteter Output: fromString() korrekt: true
 # min: 13
