@@ -6,12 +6,12 @@ struct FactorTree
 end
 
 # Konstruktor für den FactorTree-Typ
-function FactorTree(v::Int)
+function FactorTree(v::Int) #✅
     return FactorTree(v, 0, 0)
 end
 
 # Hilfsfunktion zur Berechnung der Primfaktorzerlegung
-function primeFactors(n::Int)
+function primeFactors(n::Int) #✅
     factors = Dict{Int, Int}()
     d = 2
     while d * d <= n
@@ -32,22 +32,24 @@ function primeFactors(n::Int)
 end
 
 # Funktion zur Berechnung der Primfaktorzerlegung des Wurzelknotens eines Zerlegungsbaums
-function getFactors(t::FactorTree)
+function getFactors(t::FactorTree) #✅
     return primeFactors(t.value)
 end
 
-# Funktion zur Rückgabe der Struktur des Zerlegungsbaums als String
+# Funktion zur Berechnung der Struktur des Zerlegungsbaums als String
 function getShape(t::FactorTree)
-    if t.left == 0 && t.right == 0
+    if isa(t.left, Int) && isa(t.right, Int)
         return "p"
-    elseif t.left isa Int && t.right isa Int
-        return "p2"
+    elseif isa(t.left, FactorTree) && isa(t.right, Int)
+        return "f(p|p2)"
+    elseif isa(t.left, Int) && isa(t.right, FactorTree)
+        return "f(p2|p)"
     else
-        return "f(" * getShape(t.left) * "|" * getShape(t.right) * ")"
+        return "f(p|p)"
     end
 end
 
-# Funktion zum Vergleichen der Strukturen von zwei Zerlegungsbäumen
+# Funktion zum Vergleichen zweier Zerlegungsbäume auf gleiche Struktur
 function compareShape(t::FactorTree, h::FactorTree)
     return getShape(t) == getShape(h)
 end
@@ -67,20 +69,49 @@ function computeShapes(n::Int)
     return shapes
 end
 
-#=
+
+
+#✅
+#❌
 # Beispielverwendung
-t = FactorTree(20)
-println(getFactors(t))
-println(getShape(t))
-
+t1 = FactorTree(20)
 t2 = FactorTree(945)
-t3 = FactorTree(72)
-println(compareShape(t2, t3))
+t4 = FactorTree(72)
+t5 = FactorTree(6375)
+t6 = FactorTree(216)
+t7 = FactorTree(112)
 
-println(computeShapes(10))
+#=
+#(945, 2205, 2835, 112) 
+#(2396, 4852, 7188, 2024)
+#(8909, 6411, 26727, 2625)
+println(getShape(t1))
+println(getShape(t2))
+println(compareShape(t1, t2))
+println(getShape(t1))
+println(getShape(t4))
+println(compareShape(t1, t4))
+println(compareShape(t4, t2))
+println(compareShape(t4, t6))
+println(compareShape(t5, t7))
+println(compareShape(t4, t7))
+=#
+println(computeShapes(20))
+println(computeShapes(945))
+println(computeShapes(72))
+println(computeShapes(6375))
+println(computeShapes(216))
+println(computeShapes(112))
+
+println(t1)
+println(t2)
+println(t4)
+println(t5)
+println(t6)
+println(t7)
 
 
-
+#=
 Zusammenfassung:
 Test Summary:                       | Pass  Fail  Total
 PA05                                |   36     8     44

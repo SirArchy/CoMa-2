@@ -56,6 +56,7 @@ function fromString(str::String)::Node
         end
         right.parent = node
     end
+<<<<<<< HEAD
 
     return node
 end
@@ -82,6 +83,22 @@ println(getKeyList(tree1))
 println(find(tree1, min1))
 # Erwarteter Output: 
 # fromString() korrekt: true
+=======
+    
+    if current_node === nothing
+        println("Der Baum ist kein Suchbaum!")
+    end
+    
+    return current_node
+end
+
+
+#=
+#✅
+#❌
+tree = 13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))|1
+# Erwarteter Output: fromString() korrekt: true
+>>>>>>> 52fb042d15ceeb4d53f36b0b5a01df0ce153a1b2
 # min: 13
 # KeyList: [13, 52, 57, 57, 57, 57, 57, 57, 57, 58, 71]
 # find the minimum: 13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))
