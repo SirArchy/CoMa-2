@@ -30,35 +30,55 @@ function min(tree::Node)::Int
     return tree.key
 end
 
-function fromString(str::String)::Node
+function fromString(str::String)::Union{Node, Nothing}
     if isempty(str)
         return nothing
     end
     open_bracket = findfirst(c -> c == '(', str)
     close_bracket = findfirst(c -> c == ')', str)
+
+    if open_bracket === nothing || close_bracket === nothing
+        println("Ungültiges Baumformat!")
+        return nothing
+    end
+
     key = parse(Int, str[1:open_bracket-1])
     left_str = str[open_bracket+1:close_bracket-1]
     right_str = str[close_bracket+2:end]
+
     left = fromString(left_str)
     right = fromString(right_str)
-    node = Node(key, left, right, nothing)
 
-    # Überprüfen, ob es sich um einen Suchbaum handelt
     if left !== nothing
         if left.key >= key
             println("Der Baum ist kein Suchbaum!")
+            return nothing
         end
-        left.parent = node
+        left.parent = nothing
     end
+
     if right !== nothing
         if right.key <= key
             println("Der Baum ist kein Suchbaum!")
+            return nothing
         end
+        right.parent = nothing
+    end
+
+    node = Node(key, left, right, nothing)
+
+    if left !== nothing
+        left.parent = node
+    end
+
+    if right !== nothing
         right.parent = node
     end
 
     return node
 end
+
+
 
 
 # Beispielaufrufe
