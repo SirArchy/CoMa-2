@@ -1,155 +1,107 @@
-# Definition des Types FactorTree
-struct FactorTree
-    value::Int
-    left::Union{Int, FactorTree}
-    right::Union{Int, FactorTree}
+mutable struct Node
+    key::Int
+    left::Union{Node, Nothing}
+    right::Union{Node, Nothing}
+    parent::Union{Node, Nothing}
 end
 
-# Konstruktor für den FactorTree-Typ
-function FactorTree(v::Int)
-    return FactorTree(v, 0, 0)
+function getKeyList(tree::Node)::Vector{Int}
+    keys = Int[]
+    if tree.left !== nothing
+        keys = [keys; getKeyList(tree.left)]
+    end
+    push!(keys, tree.key)
+    if tree.right !== nothing
+        keys = [keys; getKeyList(tree.right)]
+    end
+    return keys
 end
 
-# Hilfsfunktion zur Berechnung der Primfaktorzerlegung
-function primeFactors(n::Int)
-    factors = Dict{Int, Int}()
-    d = 2
-    while d * d <= n
-        if n % d == 0
-            count = 0
-            while n % d == 0
-                n = div(n, d)
-                count += 1
-            end
-            factors[d] = count
-        end
-        d += 1
+function find(tree::Node, k::Int)::Union{Node, Nothing}
+    if tree === nothing
+        return nothing
     end
-    if n > 1
-        factors[n] = 1
-    end
-    return factors
-end
-
-# Funktion zur Berechnung der Primfaktorzerlegung des Wurzelknotens eines Zerlegungsbaums
-function getFactor(t::FactorTree)
-    return primeFactors(t.value)
-end
-
-# Funktion zur Berechnung der Struktur eines Zerlegungsbaums
-function getShape(t::FactorTree)
-    left_shape = ""
-    right_shape = ""
-    
-    if typeof(t.left) == FactorTree
-        left_shape = getShape(t.left)
-    end
-    
-    if typeof(t.right) == FactorTree
-        right_shape = getShape(t.right)
-    end
-    
-    if left_shape != "" && right_shape != ""
-        return "f($left_shape|$right_shape)"
-    elseif left_shape != ""
-        return "f($left_shape|p)"
-    elseif right_shape != ""
-        return "f(p|$right_shape)"
+    if tree.key == k
+        return tree
+    elseif k < tree.key
+        return find(tree.left, k)
     else
-        return "p"
+        return find(tree.right, k)
     end
 end
 
-# Funktion zum Vergleichen der Struktur zweier Zerlegungsbäume
-function compareShape(t::FactorTree, h::FactorTree)
-    return getShape(t) == getShape(h)
+function min(tree::Node)::Int
+    while tree.left !== nothing
+        tree = tree.left
+    end
+    return tree.key
 end
 
-# Funktion zur Berechnung aller Zerlegungsstrukturen von Zahlen kleiner als n
-function computeShapes(n::Int)
-    shapes = Dict{String, Vector{Int}}()
-    
-    for i in 1:n
-        t = FactorTree(i)
-        shape = getShape(t)
-        
-        if haskey(shapes, shape)
-            push!(shapes[shape], i)
-        else
-            shapes[shape] = [i]
+function fromString(str::String)::Node
+    function parseNode(str::AbstractString, index::Int)
+        if str[index] == '('
+            index += 1
         end
+
+        key_str = ""
+        while index <= length(str) && isdigit(str[index])
+            key_str *= string(str[index])
+            index += 1
+        end
+        key = parse(Int, key_str)
+
+        node = Node(key, nothing, nothing, nothing)
+
+        if index <= length(str) && str[index] == '('
+            node.left, index = parseNode(str, index + 1)
+        end
+
+        if index <= length(str) && str[index] == '('
+            node.right, index = parseNode(str, index + 1)
+        end
+
+        if index <= length(str) && str[index] == ')'
+            index += 1
+        end
+
+        return node, index
     end
-    return shapes
+
+    tree, index = parseNode(str, 1)
+
+    if index <= length(str)
+        println("Der Baum ist kein Suchbaum!")
+        return tree
+    end
+
+    return tree
 end
 
 # Beispielaufrufe
-t = FactorTree(20)
-println(getFactor(t))  # Dict{Int64, Int64} with 2 entries: 5 => 1, 2 => 2
-println(getShape(t))  # "f(p2|p)"
-t2 = FactorTree(945)
-t3 = FactorTree(72)
-println(compareShape(t2, t3))  # true
-println(computeShapes(10))  # Dict{String, Vector{Int64}} with 3 entries: "p2" => [4, 6, 9, 10], "f(p|p2)" => [8], "p" => [1, 2, 3, 5, 7]
-
-
-#✅
-#❌
-# Beispielverwendung
-t1 = FactorTree(20)
-t2 = FactorTree(945)
-t4 = FactorTree(72)
-t5 = FactorTree(6375)
-t6 = FactorTree(216)
-t7 = FactorTree(112)
-
-#(945, 2205, 2835, 112) 
-#(2396, 4852, 7188, 2024)
-#(8909, 6411, 26727, 2625)
-println(getShape(t1))
-println(getShape(t2))
-println(compareShape(t1, t2))
-println(getShape(t1))
-println(getShape(t4))
-println(compareShape(t1, t4))
-println(compareShape(t4, t2))
-println(compareShape(t4, t6))
-println(compareShape(t5, t7))
-println(compareShape(t4, t7))
+tree2 = "3(2(1,2),5(4,))"
+tree2 = fromString(tree2)
+min2 = min(tree2)
+println(min2)
+println(getKeyList(tree2))
+println(find(tree2, min2))
 #=
-println(computeShapes(20))
-println(computeShapes(945))
-println(computeShapes(72))
-println(computeShapes(6375))
-println(computeShapes(216))
-println(computeShapes(112))
-=#
-
-#=
-Zusammenfassung:
-Test Summary:                       | Pass  Fail  Total
-PA05                                |   36     8     44
-  input = (72, 6375, 216, 112)      |    9     2     11
-    Zerlegungsbaum                  |    9     2     11  1.0s
-      Primfaktorzerlegung           |    3            3  0.0s
-      getShape                      |    2            2  0.0s
-      compareShape                  |    2     1      3  0.9s
-      computeShapes                 |    2     1      3  0.1s
-  input = (945, 2205, 2835, 112)    |    9     2     11
-    Zerlegungsbaum                  |    9     2     11  0.0s
-      Primfaktorzerlegung           |    3            3  0.0s
-      getShape                      |    2            2  0.0s
-      compareShape                  |    2     1      3  0.0s
-      computeShapes                 |    2     1      3  0.0s
-  input = (2396, 4852, 7188, 2024)  |    9     2     11
-    Zerlegungsbaum                  |    9     2     11  0.0s
-      Primfaktorzerlegung           |    3            3  0.0s
-      getShape                      |    2            2  0.0s
-      compareShape                  |    2     1      3  0.0s
-      computeShapes                 |    2     1      3  0.0s
-  input = (8909, 6411, 26727, 2625) |    9     2     11
-    Zerlegungsbaum                  |    9     2     11  0.0s
-      Primfaktorzerlegung           |    3            3  0.0s
-      getShape                      |    2            2  0.0s
-      compareShape                  |    2     1      3  0.0s
-      computeShapes                 |    2     1      3  0.0s
+tree3 = "4(1,5)"
+tree3 = fromString(tree3)
+min3 = min(tree3)
+println(min3)
+println(getKeyList(tree3))
+println(find(tree3, min3))
+tree1 = "13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))"
+tree1 = fromString(tree1)
+min1 = min(tree1)
+println(min1)
+println(getKeyList(tree1))
+println(find(tree1, min1))
+# Erwarteter Output: 
+# fromString() korrekt: true
+# min: 13
+# KeyList: [13, 52, 57, 57, 57, 57, 57, 57, 57, 58, 71]
+# find the minimum: 13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))
+# unable to find 0: true
+# n_nodes: 11
 =#
