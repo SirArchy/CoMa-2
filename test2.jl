@@ -1,87 +1,123 @@
-# Definition des Typs MaxHeap
-struct MaxHeap
-    keys::Vector{Int}
+# Definition des Typs "Node"
+struct Node
+    key::Int
+    left::Union{Node,Nothing}
+    right::Union{Node,Nothing}
+    parent::Union{Node,Nothing}
 end
 
-# Implementierung der Methoden
-
-# Konstruktor
-function MaxHeap(keys::Vector{Int})
-    h = new()
-    h.keys = keys
-    n = length(keys)
-    # Aufbau des Max-Heaps
-    for i = div(n,2):-1:1
-        maxHeapify(h,i)
+# Funktion zur Konvertierung eines Strings in einen Suchbaum
+function fromString(str::String)::Union{Node, Nothing}
+    stack = Vector{Node}()
+    i = 1
+    while i <= length(str)
+        c = str[i]
+        if isdigit(c)
+            # Schlüsselwert extrahieren
+            key = parse(Int, c)
+            while i+1 <= length(str) && isdigit(str[i+1])
+                key = key * 10 + parse(Int, str[i+1])
+                i += 1
+            end
+            node = Node(key, nothing, nothing, nothing)
+            if isempty(stack)
+                push!(stack, node)
+            else
+                parent = stack[end]
+                if parent.left === nothing
+                    parent.left = node
+                elseif parent.right === nothing
+                    parent.right = node
+                else
+                    return nothing  # Warnung: Der Baum ist kein Suchbaum!
+                end
+                node.parent = parent
+                push!(stack, node)
+            end
+        elseif c == '('
+            # weiter zum linken Teilbaum
+            i += 1
+        elseif c == ','
+            # weiter zum rechten Teilbaum
+            i += 1
+        elseif c == ')'
+            # zurück zum Elternknoten
+            pop!(stack)
+            i += 1
+        else
+            return nothing  # Warnung: Unerwartetes Zeichen im Eingabestring
+        end
     end
-    return h
+    isempty(stack) ? nothing : stack[1]  # Wurzelknoten des Baums zurückgeben
 end
 
-# maxHeapify - stellt die Max-Heap-Eigenschaft des Teilbaums mit Wurzelknoten i wieder her
-function maxHeapify(h::MaxHeap, i::Int)
-    n = length(h.keys)
-    l = 2i # linker Kindknoten
-    r = 2i+1 # rechter Kindknoten
-    largest = i
-    if l <= n && h.keys[l] > h.keys[i]
-        largest = l
+# Funktion zur Bestimmung der minimalen Schlüsselwertes im Baum
+function min(tree::Node)::Int
+    current = tree
+    while current.left !== nothing
+        current = current.left
     end
-    if r <= n && h.keys[r] > h.keys[largest]
-        largest = r
-    end
-    if largest != i
-        h.keys[i], h.keys[largest] = h.keys[largest], h.keys[i]
-        maxHeapify(h,largest)
-    end
+    current.key
 end
 
-# maximum - gibt das maximale Element des Max-Heaps zurück
-function maximum(h::MaxHeap)
-    return h.keys[1]
+# Funktion zur Bestimmung der Liste der Schlüsselwerte in aufsteigender Reihenfolge
+function getKeyList(tree::Node)::Vector{Int}
+    keyList = Int[]
+    stack = Node[]
+    current = tree
+    while !isempty(stack) || current !== nothing
+        if current !== nothing
+            push!(stack, current)
+            current = current.left
+        else
+            current = pop!(stack)
+            push!(keyList, current.key)
+            current = current.right
+        end
+    end
+    keyList
 end
 
-# extractMax - gibt das maximale Element des Max-Heaps zurück und stellt die Max-Heap-Eigenschaft wieder her
-function extractMax(h::MaxHeap)
-    n = length(h.keys)
-    if n < 1
-        error("Heap underflow")
+# Funktion zum Suchen eines Knotens mit einem bestimmten Schlüsselwert
+function find(tree::Node, k::Int)::Union{Node,Nothing}
+    current = tree
+    while current !== nothing
+        if current.key == k
+            return current
+        elseif k < current.key
+            current = current.left
+        else
+            current = current.right
+        end
     end
-    max = h.keys[1]
-    h.keys[1] = h.keys[n]
-    deleteat!(h.keys,n)
-    maxHeapify(h,1)
-    return max
+    nothing
 end
 
-# increaseKey - erhöht den Eintrag von keys[i] auf k, falls k größer ist als keys[i], und stellt anschließend die Max-Heap-Eigenschaft wieder her
-function increaseKey(h::MaxHeap, i::Int, k::Int)
-    if k < h.keys[i]
-        error("New key is smaller than current key")
-    end
-    h.keys[i] = k
-    while i > 1 && h.keys[div(i,2)] < h.keys[i]
-        h.keys[i], h.keys[div(i,2)] = h.keys[div(i,2)], h.keys[i]
-        i = div(i,2)
-    end
-end
-
-# insert - fügt ein Element mit dem Schlüssel k in keys ein und stellt anschließend die Max-Heap-Eigenschaft wieder her
-function insert(h::MaxHeap, k::Int)
-    push!(h.keys,k)
-    n = length(h.keys)
-    i = n
-    while i > 1 && h.keys[div(i,2)] < h.keys[i]
-        h.keys[i], h.keys[div(i,2)] = h.keys[div(i,2)], h.keys[i]
-        i = div(i,2)
-    end
-end
-
-# heapSort - führt Heapsort auf dem Max-Heap durch, so dass keys aufsteigend sortiert wird
-function heapSort(h::MaxHeap)
-    n = length(h.keys)
-    for i = n:-1:2
-        h.keys[1], h.keys[i] = h.keys[i], h.keys[1]
-        n -= 1
-        maxHeapify(h,1)
-    end
-end
+# Beispielaufrufe
+tree2 = "3(2(1,2),5(4,))"
+tree2 = fromString(tree2)
+min2 = min(tree2)
+println(min2)
+println(getKeyList(tree2))
+println(find(tree2, min2))
+#=
+tree3 = "4(1,5)"
+tree3 = fromString(tree3)
+min3 = min(tree3)
+println(min3)
+println(getKeyList(tree3))
+println(find(tree3, min3))
+tree1 = "13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))"
+tree1 = fromString(tree1)
+min1 = min(tree1)
+println(min1)
+println(getKeyList(tree1))
+println(find(tree1, min1))
+# Erwarteter Output: 
+# fromString() korrekt: true
+# min: 13
+# KeyList: [13, 52, 57, 57, 57, 57, 57, 57, 57, 58, 71]
+# find the minimum: 13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))
+# unable to find 0: true
+# n_nodes: 11
+=#
