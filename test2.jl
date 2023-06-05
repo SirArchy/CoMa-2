@@ -1,98 +1,59 @@
-# Definition des Typs "Node"
-struct Node
+mutable struct Node
     key::Int
-    left::Union{Node,Nothing}
-    right::Union{Node,Nothing}
-    parent::Union{Node,Nothing}
+    left::Union{Node, Nothing}
+    right::Union{Node, Nothing}
+    parent::Union{Node, Nothing}
 end
 
-# Funktion zur Konvertierung eines Strings in einen Suchbaum
-function fromString(str::String)::Union{Node, Nothing}
-    stack = Vector{Node}()
-    i = 1
-    while i <= length(str)
-        c = str[i]
-        if isdigit(c)
-            # Schlüsselwert extrahieren
-            key = parse(Int, c)
-            while i+1 <= length(str) && isdigit(str[i+1])
-                key = key * 10 + parse(Int, str[i+1])
-                i += 1
-            end
-            node = Node(key, nothing, nothing, nothing)
-            if isempty(stack)
-                push!(stack, node)
-            else
-                parent = stack[end]
-                if parent.left === nothing
-                    parent.left = node
-                elseif parent.right === nothing
-                    parent.right = node
-                else
-                    return nothing  # Warnung: Der Baum ist kein Suchbaum!
-                end
-                node.parent = parent
-                push!(stack, node)
-            end
-        elseif c == '('
-            # weiter zum linken Teilbaum
-            i += 1
-        elseif c == ','
-            # weiter zum rechten Teilbaum
-            i += 1
+function fromString(str::AbstractString)::Union{Node, Nothing}
+    stack = Vector{Union{Node, Nothing}}()
+    root = nothing
+    current_parent = nothing
+    
+    for c in str
+        if c == '('
+            continue
         elseif c == ')'
-            # zurück zum Elternknoten
+            current_parent = stack[1]
             pop!(stack)
-            i += 1
+        elseif c == ','
+            continue
         else
-            return nothing  # Warnung: Unerwartetes Zeichen im Eingabestring
+            key = parse(Int, c)
+            node = Node(key, nothing, nothing, current_parent)
+            if isempty(stack)
+                root = node
+            else
+                if stack[1].left === nothing
+                    stack[1].left = node
+                else
+                    stack[1].right = node
+                end
+            end
+            push!(stack, node)
         end
     end
-    isempty(stack) ? nothing : stack[1]  # Wurzelknoten des Baums zurückgeben
+    
+    return is_search_tree(root) ? root : (println("Der Baum ist kein Suchbaum!"); nothing)
 end
 
-# Funktion zur Bestimmung der minimalen Schlüsselwertes im Baum
-function min(tree::Node)::Int
-    current = tree
-    while current.left !== nothing
-        current = current.left
+function is_search_tree(node::Union{Node, Nothing}, min_val::Int = -Inf, max_val::Int = Inf)::Bool
+    if node === nothing
+        return true
+    elseif node.key < min_val || node.key > max_val
+        return false
+    else
+        return is_search_tree(node.left, min_val, node.key) && is_search_tree(node.right, node.key, max_val)
     end
-    current.key
 end
 
-# Funktion zur Bestimmung der Liste der Schlüsselwerte in aufsteigender Reihenfolge
-function getKeyList(tree::Node)::Vector{Int}
-    keyList = Int[]
-    stack = Node[]
-    current = tree
-    while !isempty(stack) || current !== nothing
-        if current !== nothing
-            push!(stack, current)
-            current = current.left
-        else
-            current = pop!(stack)
-            push!(keyList, current.key)
-            current = current.right
-        end
-    end
-    keyList
-end
 
-# Funktion zum Suchen eines Knotens mit einem bestimmten Schlüsselwert
-function find(tree::Node, k::Int)::Union{Node,Nothing}
-    current = tree
-    while current !== nothing
-        if current.key == k
-            return current
-        elseif k < current.key
-            current = current.left
-        else
-            current = current.right
-        end
-    end
-    nothing
-end
 
+tree1 = "3(2(1,2),5(4,))"
+tree1 = fromString(tree1)
+println(tree1)
+
+#=
 # Beispielaufrufe
 tree2 = "3(2(1,2),5(4,))"
 tree2 = fromString(tree2)
@@ -100,7 +61,7 @@ min2 = min(tree2)
 println(min2)
 println(getKeyList(tree2))
 println(find(tree2, min2))
-#=
+
 tree3 = "4(1,5)"
 tree3 = fromString(tree3)
 min3 = min(tree3)

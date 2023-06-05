@@ -80,6 +80,7 @@ end
 # Beispielaufrufe
 tree2 = "3(2(1,2),5(4,))"
 tree2 = fromString(tree2)
+println(tree2)
 min2 = min(tree2)
 println(min2)
 println(getKeyList(tree2))
