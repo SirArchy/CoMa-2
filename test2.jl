@@ -5,52 +5,75 @@ mutable struct Node
     parent::Union{Node, Nothing}
 end
 
-function fromString(str::AbstractString)::Union{Node, Nothing}
-    stack = Vector{Union{Node, Nothing}}()
-    root = nothing
-    current_parent = nothing
-    
-    for c in str
-        if c == '('
-            continue
-        elseif c == ')'
-            current_parent = stack[1]
-            pop!(stack)
-        elseif c == ','
-            continue
-        else
-            key = parse(Int, c)
-            node = Node(key, nothing, nothing, current_parent)
-            if isempty(stack)
-                root = node
-            else
-                if stack[1].left === nothing
-                    stack[1].left = node
-                else
-                    stack[1].right = node
-                end
-            end
-            push!(stack, node)
+function fromString(str::String)::Union{Node, String}
+    function parseNode(substr::SubString)::Union{Node, String}
+        if isempty(substr)
+            return nothing
         end
-    end
-    
-    return is_search_tree(root) ? root : (println("Der Baum ist kein Suchbaum!"); nothing)
-end
 
-function is_search_tree(node::Union{Node, Nothing}, min_val::Int = -Inf, max_val::Int = Inf)::Bool
-    if node === nothing
-        return true
-    elseif node.key < min_val || node.key > max_val
-        return false
+        key_str, rest = split(substr, "(", limit=2)
+        if isempty(rest)
+            return "Ungültiger Baum: Fehlendes öffnendes oder schließendes Klammernpaar"
+        end
+
+        key = parse(Int, key_str)
+
+        if isempty(rest)
+            return Node(key, nothing, nothing, nothing)
+        end
+
+        left_substr, right_substr = split(rest, ",", limit=2)
+        if isempty(right_substr)
+            right_substr = ""
+        end
+
+        left_node = parseNode(left_substr)
+        if typeof(left_node) == String
+            return left_node
+        end
+
+        right_node = parseNode(right_substr)
+        if typeof(right_node) == String
+            return right_node
+        end
+
+        node = Node(key, left_node, right_node, nothing)
+        left_node.parent = node
+        right_node.parent = node
+        return node
+    end
+
+    root_node = parseNode(str)
+    if typeof(root_node) == String
+        return "Der Baum ist kein Suchbaum!"
+    end
+
+    function isSearchTree(node::Node, min_key::Int, max_key::Int)::Bool
+        if node === nothing
+            return true
+        end
+
+        if node.key < min_key || node.key > max_key
+            return false
+        end
+
+        return isSearchTree(node.left, min_key, node.key-1) && isSearchTree(node.right, node.key+1, max_key)
+    end
+
+    if isSearchTree(root_node, Int64.min, Int64.max)
+        return root_node
     else
-        return is_search_tree(node.left, min_val, node.key) && is_search_tree(node.right, node.key, max_val)
+        return "Der Baum ist kein Suchbaum!"
     end
 end
 
 
 
-tree1 = "3(2(1,2),5(4,))"
-tree1 = fromString(tree1)
+
+tree = fromString("4(1,5)")
+# Ausgabe: Node(4, Node(1, nothing, nothing, Node(4, nothing, nothing, nothing)), Node(5, nothing, nothing, Node(4, nothing, nothing, nothing)), nothing)
+println(tree)
+tree1 = fromString("3(2(1,2),5(4,))")
 println(tree1)
 
 #=
