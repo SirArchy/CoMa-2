@@ -5,77 +5,78 @@ mutable struct Node
     parent::Union{Node, Nothing}
 end
 
-function fromString(str::String)::Union{Node, String}
-    function parseNode(substr::SubString)::Union{Node, String}
-        if isempty(substr)
-            return nothing
-        end
+function is_search_tree(node::Node)
+    if node == nothing
+        return true
+    end
+    
+    if node.left != nothing && node.left.key > node.key
+        return false
+    end
+    
+    if node.right != nothing && node.right.key < node.key
+        return false
+    end
+    
+    return is_search_tree(node.left) && is_search_tree(node.right)
+end
 
-        key_str, rest = split(substr, "(", limit=2)
-        if isempty(rest)
-            return "Ungültiger Baum: Fehlendes öffnendes oder schließendes Klammernpaar"
-        end
-
-        key = parse(Int, key_str)
-
-        if isempty(rest)
-            return Node(key, nothing, nothing, nothing)
-        end
-
-        left_substr, right_substr = split(rest, ",", limit=2)
-        if isempty(right_substr)
-            right_substr = ""
-        end
-
-        left_node = parseNode(left_substr)
-        if typeof(left_node) == String
-            return left_node
-        end
-
-        right_node = parseNode(right_substr)
-        if typeof(right_node) == String
-            return right_node
-        end
-
-        node = Node(key, left_node, right_node, nothing)
+function fromString(str::String)::Tuple{Union{Node, Nothing}, String}
+    if isempty(str)
+        return nothing, "Invalid tree encoding!"
+    end
+    
+    open_bracket = findfirst('(', str)
+    close_bracket = findlast(')', str)
+    
+    if open_bracket == nothing || close_bracket == nothing
+        return nothing, "Invalid tree encoding!"
+    end
+    
+    key = parse(Int, str[1:open_bracket-1])
+    
+    left_str = str[open_bracket+1:close_bracket-1]
+    right_str = str[close_bracket+2:end]
+    
+    left_node, left_error = fromString(left_str)
+    if !isempty(left_error)
+        return nothing, left_error
+    end
+    
+    right_node, right_error = fromString(right_str)
+    if !isempty(right_error)
+        return nothing, right_error
+    end
+    
+    node = Node(key, left_node, right_node, nothing)
+    
+    if left_node != nothing
         left_node.parent = node
+    end
+    
+    if right_node != nothing
         right_node.parent = node
-        return node
     end
-
-    root_node = parseNode(str)
-    if typeof(root_node) == String
-        return "Der Baum ist kein Suchbaum!"
+    
+    if !is_search_tree(node)
+        return nothing, "The tree is not a search tree!"
     end
-
-    function isSearchTree(node::Node, min_key::Int, max_key::Int)::Bool
-        if node === nothing
-            return true
-        end
-
-        if node.key < min_key || node.key > max_key
-            return false
-        end
-
-        return isSearchTree(node.left, min_key, node.key-1) && isSearchTree(node.right, node.key+1, max_key)
-    end
-
-    if isSearchTree(root_node, Int64.min, Int64.max)
-        return root_node
-    else
-        return "Der Baum ist kein Suchbaum!"
-    end
+    
+    return node, ""
 end
 
 
 
 
-tree = fromString("4(1,5)")
-# Ausgabe: Node(4, Node(1, nothing, nothing, Node(4, nothing, nothing, nothing)), Node(5, nothing, nothing, Node(4, nothing, nothing, nothing)), nothing)
-println(tree)
-tree1 = fromString("3(2(1,2),5(4,))")
-println(tree1)
 
+
+println(fromString("4(1,5)"))
+println(fromString("3(2(1,2),5(4,))"))
+#=
+Ausgabe: 
+Node(4, Node(1, nothing, nothing, Node(4, nothing, nothing, nothing)), Node(5, nothing, nothing, Node(4, nothing, nothing, nothing)), nothing)
+Node(3, Node(2, Node(1, nothing, nothing, Node(2, Node(1, nothing, nothing, nothing), Node(2, nothing, nothing, nothing), nothing)), Node(2, Node(1, nothing, nothing, Node(2, Node(1, nothing, nothing, nothing), Node(2, nothing, nothing, nothing), nothing)), Node(2, nothing, nothing, nothing)), nothing)), Node(5, Node(4, nothing, nothing, Node(5, Node(4, nothing, nothing, nothing), nothing, nothing)), nothing, Node(3, Node(2, Node(1, nothing, nothing, Node(2, Node(1, nothing, nothing, nothing), Node(2, nothing, nothing, nothing), nothing)), Node(2, nothing, nothing, nothing)), Node(5, Node(4, nothing, nothing, Node(5, Node(4, nothing, nothing, nothing), nothing, nothing)), nothing, nothing)), nothing)), nothing))
+=#
 #=
 # Beispielaufrufe
 tree2 = "3(2(1,2),5(4,))"
