@@ -5,43 +5,58 @@ mutable struct Node
     parent::Union{Node, Nothing}
 end
 
-function fromString(str::String)::Node
-    function parseNode(str::String)::Tuple{Node, String}
-        # Den Key des Knotens aus dem String extrahieren
-        key_str, str = split(str, "(", limit=2)
-        key = parse(Int, key_str)
+function fromString(str::AbstractString)::Union{Node, Nothing}
+    stack = Vector{Node}()
+    current_node = nothing
+    current_number = ""
+    is_left_child = true
 
-        # Überprüfen, ob der Knoten einen linken Teilbaum hat
-        if isempty(str) || str[1] == ','
-            left = nothing
-            str = str[2:end]
+    for char in str
+        if char == '('
+            if !isnothing(current_node)
+                push!(stack, current_node)
+            end
+            current_node = Node(parse(Int, current_number), nothing, nothing, nothing)
+            current_number = ""
+            is_left_child = true
+        elseif char == ','
+            if is_left_child
+                current_node.left = Node(parse(Int, current_number), nothing, nothing, current_node)
+            else
+                current_node.right = Node(parse(Int, current_number), nothing, nothing, current_node)
+            end
+            current_number = ""
+            is_left_child = false
+        elseif char == ')'
+            if is_left_child
+                current_node.left = Node(parse(Int, current_number), nothing, nothing, current_node)
+            else
+                current_node.right = Node(parse(Int, current_number), nothing, nothing, current_node)
+            end
+            if !isempty(stack)
+                parent = pop!(stack)
+                if is_left_child
+                    parent.left = current_node
+                else
+                    parent.right = current_node
+                end
+                current_node = parent
+            end
+            current_number = ""
+            is_left_child = false
         else
-            # Den linken Teilbaum rekursiv parsen
-            left, str = parseNode(str[1:end-1])
-            str = str[2:end]
+            current_number *= char
         end
-
-        # Überprüfen, ob der Knoten einen rechten Teilbaum hat
-        if isempty(str) || str[1] == ')'
-            right = nothing
-            str = str[2:end]
-        else
-            # Den rechten Teilbaum rekursiv parsen
-            right, str = parseNode(str)
-            str = str[2:end]
-        end
-
-        # Einen neuen Knoten erstellen und zurückgeben
-        node = Node(key, left, right, parent)
-        return node, str
     end
 
-    # Den String rekursiv parsen, um den Baum aufzubauen
-    root, _ = parseNode(str)
-    return root
+    if !isempty(stack)
+        println("Der Baum ist kein Suchbaum!")
+        return nothing
+    end
+
+    return current_node
 end
 
-# Beispielaufrufe
 
 println(fromString("4(1,5)"))
 println(fromString("3(2(1,2),5(4,))"))
