@@ -5,40 +5,40 @@ mutable struct Node
     parent::Union{Node, Nothing}
 end
 
-function fromString(str::String)::Node
-    function parseNode(str::String)::Tuple{Node, String}
-        # Den Key des Knotens aus dem String extrahieren
-        key_str, str = split(str, "(", limit=2)
-        key = parse(Int, key_str)
 
-        # Überprüfen, ob der Knoten einen linken Teilbaum hat
-        if isempty(str) || str[1] == ','
-            left = nothing
-            str = str[2:end]
-        else
-            # Den linken Teilbaum rekursiv parsen
-            left, str = parseNode(str[1:end-1])
-            str = str[2:end]
-        end
-
-        # Überprüfen, ob der Knoten einen rechten Teilbaum hat
-        if isempty(str) || str[1] == ')'
-            right = nothing
-            str = str[2:end]
-        else
-            # Den rechten Teilbaum rekursiv parsen
-            right, str = parseNode(str)
-            str = str[2:end]
-        end
-
-        # Einen neuen Knoten erstellen und zurückgeben
-        node = Node(key, left, right, parent)
-        return node, str
+function fromString(str::String, pos::Int)::Node
+    if pos > length(str) || str[pos] == ')'
+        return nothing
     end
+    
+    key = parse(Int, str[pos])
+    node = Node(key, nothing, nothing, nothing)
+    
+    pos += 1
+    if pos <= length(str) && str[pos] == '('
+        pos += 1
+        node.left = fromString(str, pos)
+        if node.left != nothing
+            node.left.parent = node
+        end
+    end
+    
+    pos += 1
+    if pos <= length(str) && str[pos] == ','
+        pos += 1
+        node.right = fromString(str, pos)
+        if node.right != nothing
+            node.right.parent = node
+        end
+    end
+    
+    pos += 1  # Move past the closing parenthesis
+    
+    return node
+end
 
-    # Den String rekursiv parsen, um den Baum aufzubauen
-    root, _ = parseNode(str)
-    return root
+function fromString(str::String)::Node
+    return fromString(str, 1)
 end
 
 # Beispielaufrufe
