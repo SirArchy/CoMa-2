@@ -1,99 +1,143 @@
-struct Node
+mutable struct Node
     key::Int
     left::Union{Node, Nothing}
     right::Union{Node, Nothing}
     parent::Union{Node, Nothing}
 end
 
-function getKeyList(tree::Node)::Vector{Int}
-    if tree === nothing
-        return []
-    else
-        return [getKeyList(tree.left)..., tree.key, getKeyList(tree.right)...]
-    end
-end
-
-function find(tree::Node, k::Int)::Union{Node, Nothing}
-    if tree === nothing || tree.key == k
-        return tree
-    elseif k < tree.key
-        return find(tree.left, k)
-    else
-        return find(tree.right, k)
-    end
-end
-
-function min(tree::Node)::Int
-    while tree.left !== nothing
-        tree = tree.left
-    end
-    return tree.key
-end
-
-function fromString(str::String)::Union{Node, Nothing}
-    if isempty(str)
-        return nothing
-    end
-    open_bracket = findfirst(c -> c == '(', str)
-    close_bracket = findfirst(c -> c == ')', str)
-
-    if open_bracket === nothing || close_bracket === nothing
-        println("Ungültiges Baumformat!")
+function fromString(str::String, pos::Int)::Union{Node, Nothing}
+    if pos > length(str)
         return nothing
     end
 
-    key = parse(Int, str[1:open_bracket-1])
-    left_str = str[open_bracket+1:close_bracket-1]
-    right_str = str[close_bracket+2:end]
+    if str[pos] == ','
+        pos += 1
+    elseif str[pos] == ')'
+        pos += 1
+        return fromString(str, pos) # Skip ')' and continue processing
+    end
 
-    left = fromString(left_str)
-    right = fromString(right_str)
+    number_string = ""
+    while pos <= length(str) && isdigit(str[pos])
+        number_string = number_string * str[pos]
+        pos += 1
+    end
+    key = parse(Int, number_string)
+    node = Node(key, nothing, nothing, nothing)
 
-    if left !== nothing
-        if left.key >= key
-            println("Der Baum ist kein Suchbaum!")
-            return nothing
+    if pos <= length(str) && str[pos] == '('
+        pos += 1
+        if pos <= length(str) && str[pos] == ','
+            pos += 1
+            sub_str = str[pos:end]
+            node.right = fromString(sub_str, 1) 
+            if node.right !== nothing
+                node.right.parent = node
+            end
+        else
+            node.left = fromString(str, pos)
+            if node.left !== nothing
+                node.left.parent = node
+            end
         end
-        left.parent = nothing
     end
 
-    if right !== nothing
-        if right.key <= key
-            println("Der Baum ist kein Suchbaum!")
-            return nothing
+    pos += 1
+    if pos <= length(str) && str[pos] == ','
+        pos += 1
+        sub_str = str[pos:end]
+        node.right = fromString(sub_str, 1) 
+        if node.right !== nothing
+            node.right.parent = node
         end
-        right.parent = nothing
-    end
-
-    node = Node(key, left, right, nothing)
-
-    if left !== nothing
-        left.parent = node
-    end
-
-    if right !== nothing
-        right.parent = node
     end
 
     return node
 end
 
+function fromString(str::String)::Node
+    return fromString(str, 1)
+end
 
+
+
+function getKeyList(tree::Node)::Vector{Int}
+    key_list = Int[]
+    traverseInOrder(tree, key_list)
+    return sort(key_list)
+end
+
+function traverseInOrder(node::Union{Node, Nothing}, key_list::Vector{Int})
+    if node === nothing
+        return
+    end
+    
+    traverseInOrder(node.left, key_list)
+    push!(key_list, node.key)
+    traverseInOrder(node.right, key_list)
+end
+
+function find(node::Union{Node, Nothing}, k::Int)::Union{Node, Nothing}
+    if node === nothing || node.key == k
+        return node
+    elseif k < node.key
+        return find(node.left, k)
+    else
+        return find(node.right, k)
+    end
+end
+
+function min(node::Node)::Int
+    keyList = getKeyList(node)
+    return keyList[1]
+end
 
 
 # Beispielaufrufe
-tree2 = "3(2(1,2),5(4,))"
-tree2 = fromString(tree2)
-min2 = min(tree2)
-println(min2)
-println(getKeyList(tree2))
-println(find(tree2, min2))
-tree3 = "4(1,5)"
-tree3 = fromString(tree3)
-min3 = min(tree3)
-println(min3)
-println(getKeyList(tree3))
-println(find(tree3, min3))
+#=
+str = "58(49(89,),93(80,))"
+tree = fromString(str)
+println(tree)
+println(getKeyList(tree))
+println(find(tree, 5))
+println(min(tree))
+
+str = "4(1,5)"
+tree = fromString(str)
+println(tree)
+println(getKeyList(tree))
+println(find(tree, 5))
+println(min(tree))
+
+str = "3(2(1,2),5(4,))"
+tree = fromString(str)
+println(tree)
+println(getKeyList(tree))
+println(find(tree, 5))
+println(min(tree))
+
+str = "9(,97)"
+tree = fromString(str)
+println(tree)
+println(getKeyList(tree))
+println(find(tree, 5))
+println(min(tree))
+
+str = "13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))"
+tree = fromString(str)
+println(tree)
+println(getKeyList(tree))
+println(find(tree, 5))
+println(min(tree))
+
+Ausgabe: 
+Node(4, Node(1, nothing, nothing, Node(4, nothing, nothing, nothing)), Node(5, nothing, nothing, Node(4, nothing, nothing, nothing)), nothing)
+Node(3, Node(2, Node(1, nothing, nothing, Node(2, Node(1, nothing, nothing, nothing), Node(2, nothing, nothing, nothing), nothing)), Node(2, Node(1, nothing, nothing, Node(2, Node(1, nothing, nothing, nothing), Node(2, nothing, nothing, nothing), nothing)), Node(2, nothing, nothing, nothing)), nothing)), Node(5, Node(4, nothing, nothing, Node(5, Node(4, nothing, nothing, nothing), nothing, nothing)), nothing, Node(3, Node(2, Node(1, nothing, nothing, Node(2, Node(1, nothing, nothing, nothing), Node(2, nothing, nothing, nothing), nothing)), Node(2, nothing, nothing, nothing)), Node(5, Node(4, nothing, nothing, Node(5, Node(4, nothing, nothing, nothing), nothing, nothing)), nothing, nothing)), nothing)), nothing))
+=#
+
+
+#=
+# Beispielaufrufe
 tree1 = "13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))"
 tree1 = fromString(tree1)
 min1 = min(tree1)
@@ -107,5 +151,4 @@ println(find(tree1, min1))
 # find the minimum: 13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))
 # unable to find 0: true
 # n_nodes: 11
-#=
 =#

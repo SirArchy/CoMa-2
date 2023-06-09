@@ -1,24 +1,21 @@
-Bitte implementiere folgende Aufgabe in Julia:
-In dieser Programmieraufgabe geht es um eine erste Implementierung binärer Bäume. Schreiben
-Sie hierfür einen Type Node mit den Attributen:
-• key (ganze Zahl)
-• left (Instanz des Types Node oder Nothing)
-• right (Instanz der Types Node oder Nothing)
-die auf die ganzzahlige Knotenschlüssel, das linke und das rechte Kind verweisen. Ein Binärbaum
-wird dann durch seinen Wurzelknoten dargestellt. Implementieren Sie die folgenden Methoden:
-(a) Konstruktor Node(key, left, right).
-(b) Konstruktor Node(key).
-
-
-(c) keys(Node) gibt die Knotenschlüssel seines Baums in einem Vector zurück. 
-(d) height(Node) gibt die Höhe des Knotens in seinem Baum zurück.
-(e) leaves(Node) gibt die Anzahl der Blätter seines Baums zurück. 
-
-Beispielaufrufe:
-ex1 = Node(1)
-ex2 = Node(2,Node(2,nothing,nothing),Node(2,nothing,Node(3)))
-print(height(ex2)) # prints 3
-print(height(ex1)) # prints 1
-print(keys(ex1)) # prints 1-element Vector{Any}: 1
-print(keys(ex2)) # prints 4-element Vector{Any}: 2 2 2 3
-print(leaves(ex2)) # prints 2
+Funktion fromString(str::String)::Node:
+    Wenn str leer ist, gib Nothing zurück
+    
+    key = Lese den ersten Wert von str als Integer
+    Erzeuge einen neuen Node mit key
+    
+    Falls der Rest von str nach dem ersten Wert nicht leer ist:
+        index = Finde den Index des ersten Auftretens von '(' nach dem ersten Wert
+        leftStr = Teilstring von str, beginnend nach dem ersten Wert und bis index-1
+        rightStr = Teilstring von str, beginnend bei index+1 bis zum Ende
+        
+        Setze left = fromString(leftStr) // rekursiver Aufruf für den linken Teilbaum
+        Setze right = fromString(rightStr) // rekursiver Aufruf für den rechten Teilbaum
+        
+        Setze left.parent = Node // Setze den parent des linken Teilbaums auf den aktuellen Knoten
+        Setze right.parent = Node // Setze den parent des rechten Teilbaums auf den aktuellen Knoten
+        
+        Setze Node.left = left // Setze den linken Teilbaum des Knotens
+        Setze Node.right = right // Setze den rechten Teilbaum des Knotens
+    
+    Gib Node zurück

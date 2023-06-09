@@ -5,62 +5,104 @@ mutable struct Node
     parent::Union{Node, Nothing}
 end
 
-function fromString(str::AbstractString)::Union{Node, Nothing}
-    stack = Vector{Node}()
-    current_node = nothing
-    current_number = ""
-    is_left_child = true
-
-    for char in str
-        if char == '('
-            if !isnothing(current_node)
-                push!(stack, current_node)
-            end
-            current_node = Node(parse(Int, current_number), nothing, nothing, nothing)
-            current_number = ""
-            is_left_child = true
-        elseif char == ','
-            if is_left_child
-                current_node.left = Node(parse(Int, current_number), nothing, nothing, current_node)
-            else
-                current_node.right = Node(parse(Int, current_number), nothing, nothing, current_node)
-            end
-            current_number = ""
-            is_left_child = false
-        elseif char == ')'
-            if is_left_child
-                current_node.left = Node(parse(Int, current_number), nothing, nothing, current_node)
-            else
-                current_node.right = Node(parse(Int, current_number), nothing, nothing, current_node)
-            end
-            if !isempty(stack)
-                parent = pop!(stack)
-                if is_left_child
-                    parent.left = current_node
-                else
-                    parent.right = current_node
-                end
-                current_node = parent
-            end
-            current_number = ""
-            is_left_child = false
-        else
-            current_number *= char
-        end
-    end
-
-    if !isempty(stack)
-        println("Der Baum ist kein Suchbaum!")
+function fromString(str::String)::Node
+    if isempty(str)
         return nothing
     end
+    
+    key = parse(Int, match(r"^\d+", str).match)
+    node = Node(key, nothing, nothing, nothing)
+    
+    remaining_str = match(r"\((.*)\)", str).captures[1]
+    
+    if !isempty(remaining_str)
+        index = findfirst('(', remaining_str)
+        if index === nothing
+            # Überprüfen, ob remaining_str nur aus Zahlen besteht
+            if all(isdigit, remaining_str)
+                key = parse(Int, remaining_str)
+                return Node(key, nothing, nothing, node)
+            else
+                error("Ungültiger String: $remaining_str")
+            end
+        else
+            left_str = remaining_str[1:index-1]
+            right_str = remaining_str[index+1:end]
+            left = fromString(left_str)
+            right = fromString(right_str)
+            
+            if left !== nothing
+                left.parent = node
+            end
 
-    return current_node
+            if right !== nothing
+                right.parent = node
+            end
+
+            node.left = left
+            node.right = right
+        end
+    end
+    
+    return node
 end
 
 
-println(fromString("4(1,5)"))
-println(fromString("3(2(1,2),5(4,))"))
+function getKeyList(tree::Node)::Vector{Int}
+    key_list = Int[]
+    traverse(tree, key_list)
+    return key_list
+end
+
+function traverse(node::Union{Node, Nothing}, key_list::Vector{Int})
+    if node === nothing
+        return
+    end
+    
+    traverse(node.left, key_list)
+    push!(key_list, node.key)
+    traverse(node.right, key_list)
+end
+
+function find(node::Union{Node, Nothing}, k::Int)::Union{Node, Nothing}
+    if node === nothing || node.key == k
+        return node
+    elseif k < node.key
+        return find(node.left, k)
+    else
+        return find(node.right, k)
+    end
+end
+
+function min(node::Node)::Int
+    while node.left !== nothing
+        node = node.left
+    end
+    return node.key
+end
+
+# Beispielaufrufe
+str = "4(1,5)"
+tree = fromString(str)
+println(tree)
+println(getKeyList(tree))
+println(find(tree, 5))
+println(min(tree))
+
+str = "3(2(1,2),5(4,))"
+tree = fromString(str)
+println(tree)
+println(getKeyList(tree))
+println(find(tree, 5))
+println(min(tree))
 #=
+str = "9(,97)"
+tree = fromString(str)
+println(tree)
+println(getKeyList(tree))
+println(find(tree, 5))
+println(min(tree))
+
 Ausgabe: 
 Node(4, Node(1, nothing, nothing, Node(4, nothing, nothing, nothing)), Node(5, nothing, nothing, Node(4, nothing, nothing, nothing)), nothing)
 Node(3, Node(2, Node(1, nothing, nothing, Node(2, Node(1, nothing, nothing, nothing), Node(2, nothing, nothing, nothing), nothing)), Node(2, Node(1, nothing, nothing, Node(2, Node(1, nothing, nothing, nothing), Node(2, nothing, nothing, nothing), nothing)), Node(2, nothing, nothing, nothing)), nothing)), Node(5, Node(4, nothing, nothing, Node(5, Node(4, nothing, nothing, nothing), nothing, nothing)), nothing, Node(3, Node(2, Node(1, nothing, nothing, Node(2, Node(1, nothing, nothing, nothing), Node(2, nothing, nothing, nothing), nothing)), Node(2, nothing, nothing, nothing)), Node(5, Node(4, nothing, nothing, Node(5, Node(4, nothing, nothing, nothing), nothing, nothing)), nothing, nothing)), nothing)), nothing))
