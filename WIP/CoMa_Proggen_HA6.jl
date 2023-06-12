@@ -17,6 +17,7 @@ function fromString(str::String, pos::Int)::Union{Node, Nothing}
         return fromString(str, pos) # Skip ')' and continue processing
     end
 
+    # get every digit of the key
     number_string = ""
     while pos <= length(str) && isdigit(str[pos])
         number_string = number_string * str[pos]
@@ -94,7 +95,7 @@ end
 
 
 # Beispielaufrufe
-#=
+
 str = "58(49(89,),93(80,))"
 tree = fromString(str)
 println(tree)
@@ -129,7 +130,7 @@ println(tree)
 println(getKeyList(tree))
 println(find(tree, 5))
 println(min(tree))
-
+#=
 Ausgabe: 
 Node(4, Node(1, nothing, nothing, Node(4, nothing, nothing, nothing)), Node(5, nothing, nothing, Node(4, nothing, nothing, nothing)), nothing)
 Node(3, Node(2, Node(1, nothing, nothing, Node(2, Node(1, nothing, nothing, nothing), Node(2, nothing, nothing, nothing), nothing)), Node(2, Node(1, nothing, nothing, Node(2, Node(1, nothing, nothing, nothing), Node(2, nothing, nothing, nothing), nothing)), Node(2, nothing, nothing, nothing)), nothing)), Node(5, Node(4, nothing, nothing, Node(5, Node(4, nothing, nothing, nothing), nothing, nothing)), nothing, Node(3, Node(2, Node(1, nothing, nothing, Node(2, Node(1, nothing, nothing, nothing), Node(2, nothing, nothing, nothing), nothing)), Node(2, nothing, nothing, nothing)), Node(5, Node(4, nothing, nothing, Node(5, Node(4, nothing, nothing, nothing), nothing, nothing)), nothing, nothing)), nothing)), nothing))
