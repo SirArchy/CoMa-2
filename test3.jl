@@ -24,16 +24,16 @@ function goTroughString(str::String, pos::Integer)
     node = Node(key, nothing, nothing, nothing)
     while pos < length(str)
         # open bracket and number next ==> left leaf
-        if str[pos] == '(' && pos < length(str) && isdigit(str[pos+1]) 
+        if str[pos] == '(' && isdigit(str[pos+1]) 
             pos += 1
             # recursion starting point
             node.left, pos = goTroughString(str, pos)
             node.left.parent = node
         # open bracket and NO number next ==> go on
-        elseif str[pos] == '(' && pos < length(str) && !isdigit(str[pos+1])
+        elseif str[pos] == '(' && !isdigit(str[pos+1])
             pos += 1
         # comma and number next ==> right leaf
-        elseif str[pos] == ',' && pos < length(str) && isdigit(str[pos+1]) 
+        elseif str[pos] == ',' && isdigit(str[pos+1]) 
             pos += 1
             # recursion starting point
             node.right, pos = goTroughString(str, pos)
@@ -41,10 +41,10 @@ function goTroughString(str::String, pos::Integer)
                 node.right.parent = node.parent
             end
         # comma and NO number next ==> go on
-        elseif str[pos] == ',' && pos < length(str) && !isdigit(str[pos+1])
+        elseif str[pos] == ',' && !isdigit(str[pos+1])
             pos += 1 
         # closing bracket ==> go on and return node
-        elseif str[pos] == ')' && pos < length(str) 
+        elseif str[pos] == ')'
             pos += 1
             return node, pos
         else
