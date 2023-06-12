@@ -6,62 +6,68 @@ mutable struct Node
 end
 
 function fromString(str::String)::Node
-    if isempty(str)
-        return nothing
-    end
-    
-    key = parse(Int, match(r"^\d+", str).match)
-    node = Node(key, nothing, nothing, nothing)
-    
-    remaining_str = match(r"\((.*)\)", str).captures[1]
-    
-    if !isempty(remaining_str)
-        index = findfirst('(', remaining_str)
-        if index === nothing
-            # Überprüfen, ob remaining_str nur aus Zahlen besteht
-            if all(isdigit, remaining_str)
-                key = parse(Int, remaining_str)
-                return Node(key, nothing, nothing, node)
-            else
-                error("Ungültiger String: $remaining_str")
-            end
-        else
-            left_str = remaining_str[1:index-1]
-            right_str = remaining_str[index+1:end]
-            left = fromString(left_str)
-            right = fromString(right_str)
-            
-            if left !== nothing
-                left.parent = node
-            end
-
-            if right !== nothing
-                right.parent = node
-            end
-
-            node.left = left
-            node.right = right
-        end
-    end
-    
-    return node
+    pos = 1
+    node = goTroughString(str, pos)
+    return node[1]
 end
 
+function goTroughString(str::String, pos::Integer)
+    # get every digit of the key
+    number_string = ""
+    while pos <= length(str) && isdigit(str[pos])
+        number_string = number_string * str[pos]
+        pos += 1
+    end
+    # convert number string to int
+    key = parse(Int, number_string)
+    # create new node and set its key attribute
+    node = Node(key, nothing, nothing, nothing)
+    while pos < length(str)
+        # open bracket and number next ==> left leaf
+        if str[pos] == '(' && pos < length(str) && isdigit(str[pos+1]) 
+            pos += 1
+            # recursion starting point
+            node.left, pos = goTroughString(str, pos)
+            node.left.parent = node
+        # open bracket and NO number next ==> go on
+        elseif str[pos] == '(' && pos < length(str) && !isdigit(str[pos+1])
+            pos += 1
+        # comma and number next ==> right leaf
+        elseif str[pos] == ',' && pos < length(str) && isdigit(str[pos+1]) 
+            pos += 1
+            # recursion starting point
+            node.right, pos = goTroughString(str, pos)
+            if node.right !== nothing
+                node.right.parent = node.parent
+            end
+        # comma and NO number next ==> go on
+        elseif str[pos] == ',' && pos < length(str) && !isdigit(str[pos+1])
+            pos += 1 
+        # closing bracket ==> go on and return node
+        elseif str[pos] == ')' && pos < length(str) 
+            pos += 1
+            return node, pos
+        else
+            return nothing
+        end
+    end
+    return node, pos
+end
 
 function getKeyList(tree::Node)::Vector{Int}
     key_list = Int[]
-    traverse(tree, key_list)
-    return key_list
+    traverseInOrder(tree, key_list)
+    return sort(key_list)
 end
 
-function traverse(node::Union{Node, Nothing}, key_list::Vector{Int})
+function traverseInOrder(node::Union{Node, Nothing}, key_list::Vector{Int})
     if node === nothing
         return
     end
     
-    traverse(node.left, key_list)
+    traverseInOrder(node.left, key_list)
     push!(key_list, node.key)
-    traverse(node.right, key_list)
+    traverseInOrder(node.right, key_list)
 end
 
 function find(node::Union{Node, Nothing}, k::Int)::Union{Node, Nothing}
@@ -75,13 +81,19 @@ function find(node::Union{Node, Nothing}, k::Int)::Union{Node, Nothing}
 end
 
 function min(node::Node)::Int
-    while node.left !== nothing
-        node = node.left
-    end
-    return node.key
+    keyList = getKeyList(node)
+    return keyList[1]
 end
 
 # Beispielaufrufe
+#= 
+str = "58(49(89,),93(80,))"
+tree = fromString(str)
+println(tree)
+println(getKeyList(tree))
+println(find(tree, 5))
+println(min(tree))
+
 str = "4(1,5)"
 tree = fromString(str)
 println(tree)
@@ -89,19 +101,28 @@ println(getKeyList(tree))
 println(find(tree, 5))
 println(min(tree))
 
-str = "3(2(1,2),5(4,))"
-tree = fromString(str)
-println(tree)
-println(getKeyList(tree))
-println(find(tree, 5))
-println(min(tree))
-#=
 str = "9(,97)"
 tree = fromString(str)
 println(tree)
 println(getKeyList(tree))
 println(find(tree, 5))
 println(min(tree))
+=#
+str = "3(2(1,2),5(4,))"
+tree = fromString(str)
+println(tree)
+println(getKeyList(tree))
+println(find(tree, 5))
+println(min(tree))
+
+str = "13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))"
+tree = fromString(str)
+println(tree)
+println(getKeyList(tree))
+println(find(tree, 5))
+println(min(tree))
+
+#=
 
 Ausgabe: 
 Node(4, Node(1, nothing, nothing, Node(4, nothing, nothing, nothing)), Node(5, nothing, nothing, Node(4, nothing, nothing, nothing)), nothing)
