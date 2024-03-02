@@ -1,97 +1,97 @@
-mutable struct Node
-    key::Int
-    left::Union{Node, Nothing}
-    right::Union{Node, Nothing}
-    parent::Union{Node, Nothing}
+struct IntVektor
+    x::Int
+    y::Int
+    z::Int
 end
 
-function fromString(str::String, pos::Int)::Union{Node, Nothing}
-    if pos > length(str)
-        return nothing
-    end
+Base.:+(v1::IntVektor, v2::IntVektor) = IntVektor(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z)
 
-    if str[pos] == ','
-        pos += 1
-    elseif str[pos] == ')'
-        pos += 1
-        return fromString(str, pos) # Skip ')' and continue processing
-    end
+Base.:*(v::IntVektor, scalar::Int) = IntVektor(v.x * scalar, v.y * scalar, v.z * scalar)
+Base.:*(scalar::Int, v::IntVektor) = v * scalar
 
-    # get every digit of the key
-    number_string = ""
-    while pos <= length(str) && isdigit(str[pos])
-        number_string = number_string * str[pos]
-        pos += 1
-    end
-    key = parse(Int, number_string)
-    node = Node(key, nothing, nothing, nothing)
-
-    if pos <= length(str) && str[pos] == '('
-        pos += 1
-        if pos <= length(str) && str[pos] == ','
-            pos += 1
-            sub_str = str[pos:end]
-            node.right = fromString(sub_str, 1) 
-            if node.right !== nothing
-                node.right.parent = node
-            end
-        else
-            node.left = fromString(str, pos)
-            if node.left !== nothing
-                node.left.parent = node
-            end
-        end
-    end
-
-    pos += 1
-    if pos <= length(str) && str[pos] == ','
-        pos += 1
-        sub_str = str[pos:end]
-        node.right = fromString(sub_str, 1) 
-        if node.right !== nothing
-            node.right.parent = node
-        end
-    end
-
-    return node
+function copy(v::IntVektor)
+    return IntVektor(v.x, v.y, v.z)
 end
 
-function fromString(str::String)::Node
-    return fromString(str, 1)
+Base.show(io::IO, v::IntVektor) = print(io, "(", v.x, ", ", v.y, ", ", v.z, ")")
+
+mutable struct Teilgitter <: IntVektor
+    koordinate_1::Int
+    koordinate_2::Int
 end
 
-
-
-function getKeyList(tree::Node)::Vector{Int}
-    key_list = Int[]
-    traverseInOrder(tree, key_list)
-    return sort(key_list)
-end
-
-function traverseInOrder(node::Union{Node, Nothing}, key_list::Vector{Int})
-    if node === nothing
-        return
+function Teilgitter(x::Int, y::Int, z::Int)
+    b1 = IntVektor(2, 1, 15)
+    b2 = IntVektor(1, 0, 5)
+    
+    k1, k2 = calculate_coordinates(x, y, z, b1, b2)
+    
+    if k1 === nothing || k2 === nothing
+        error("Vektor liegt nicht im Teilgitter.")
     end
     
-    traverseInOrder(node.left, key_list)
-    push!(key_list, node.key)
-    traverseInOrder(node.right, key_list)
+    new_teilgitter = new(x, y, z)
+    new_teilgitter.koordinate_1 = k1
+    new_teilgitter.koordinate_2 = k2
+    return new_teilgitter
 end
 
-function find(node::Union{Node, Nothing}, k::Int)::Union{Node, Nothing}
-    if node === nothing || node.key == k
-        return node
-    elseif k < node.key
-        return find(node.left, k)
+function calculate_coordinates(x, y, z, b1, b2)
+    if z % b2.z !== 0
+        return nothing, nothing
+    end
+    
+    k2 = div(z, b2.z)
+    adjusted_x = x - k2
+    adjusted_y = y
+    
+    if adjusted_x % b1.x !== 0 || adjusted_y % b1.y !== 0
+        return nothing, nothing
+    end
+    
+    k1 = div(adjusted_x, b1.x)
+    
+    if b1.z * k1 + b2.z * k2 == z
+        return k1, k2
     else
-        return find(node.right, k)
+        return nothing, nothing
     end
 end
 
-function min(node::Node)::Int
-    keyList = getKeyList(node)
-    return keyList[1]
-end
+Base.show(io::IO, g::Teilgitter) = print(io, "(", g.x, ", ", g.y, ", ", g.z, "); Koordinate 1: ", g.koordinate_1, ", Koordinate 2: ", g.koordinate_2)
+
+Base.:+(g1::Teilgitter, g2::Teilgitter) = Teilgitter(g1.x + g2.x, g1.y + g2.y, g1.z + g2.z)
+
+Base.:*(g::Teilgitter, scalar::Int) = Teilgitter(scalar * g.x, scalar * g.y, scalar * g.z)
+Base.:*(scalar::Int, g::Teilgitter) = g * scalar
+
+#=
+# Example usage
+A = Teilgitter(10, 3, 23)
+println(A)
+
+B = Teilgitter(14, 4, 34)
+println(B)
+
+C = A + B
+println(C)
+
+D = 3 * A
+println(D)
+
+E = -3 * A
+println(E)
+
+F = B * 7
+println(F)
+
+# The product A * B doesn't make sense in this context because we don't have a definition for multiplying two Teilgitter objects. We would need additional information about what this operation represents.
+
+G = copy(A)
+println(G)
+
+H = Teilgitter(9, 5, 25)
+println(H)
 
 
 # Beispielaufrufe
@@ -137,7 +137,7 @@ Node(3, Node(2, Node(1, nothing, nothing, Node(2, Node(1, nothing, nothing, noth
 =#
 
 
-#=
+
 # Beispielaufrufe
 tree1 = "13(,58(52(,57(,57(57(,57(57(57,),57)),))),71))"
 tree1 = fromString(tree1)

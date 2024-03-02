@@ -1,72 +1,125 @@
-# Definition des Types FactorTree
-struct FactorTree
-    value::Int
-    left::Union{Int, FactorTree}
-    right::Union{Int, FactorTree}
+mutable struct Node
+    key::Int
+    leftChild::Union{Node, Nothing}
+    rightChild::Union{Node, Nothing}
+    parent::Union{Node, Nothing}
+
+    Node(key::Int) = new(key, nothing, nothing, nothing)
 end
 
-# Konstruktor für den FactorTree-Typ
-function FactorTree(v::Int) #✅
-    return FactorTree(v, 0, 0)
+mutable struct AVLTree
+    root::Node
+
+    AVLTree(key::Int) = new(Node(key))
 end
 
-# Hilfsfunktion zur Berechnung der Primfaktorzerlegung
-function primeFactors(n::Int) #✅
-    factors = Dict{Int, Int}()
-    d = 2
-    while d * d <= n
-        if n % d == 0
-            count = 0
-            while n % d == 0
-                n = div(n, d)
-                count += 1
-            end
-            factors[d] = count
-        end
-        d += 1
-    end
-    if n > 1
-        factors[n] = 1
-    end
-    return factors
-end
+function insert!(avl::AVLTree, key::Int)
+    new_node = Node(key)
+    current = avl.root
+    parent = nothing
 
-# Funktion zur Berechnung der Primfaktorzerlegung des Wurzelknotens eines Zerlegungsbaums
-function getFactors(t::FactorTree) #✅
-    return primeFactors(t.value)
-end
-
-# Funktion zur Berechnung der Struktur des Zerlegungsbaums als String
-function getShape(t::FactorTree)
-    if isa(t.left, Int) && isa(t.right, Int)
-        return "p"
-    elseif isa(t.left, FactorTree) && isa(t.right, Int)
-        return "f(p|p2)"
-    elseif isa(t.left, Int) && isa(t.right, FactorTree)
-        return "f(p2|p)"
-    else
-        return "f(p|p)"
-    end
-end
-
-# Funktion zum Vergleichen zweier Zerlegungsbäume auf gleiche Struktur
-function compareShape(t::FactorTree, h::FactorTree)
-    return getShape(t) == getShape(h)
-end
-
-# Funktion zur Berechnung aller Zerlegungsstrukturen von Zahlen kleiner als n
-function computeShapes(n::Int)
-    shapes = Dict{String, Vector{Int}}()
-    for i in 1:n
-        t = FactorTree(i)
-        shape = getShape(t)
-        if haskey(shapes, shape)
-            push!(shapes[shape], i)
+    while current !== nothing
+        parent = current
+        if key < current.key
+            current = current.leftChild
         else
-            shapes[shape] = [i]
+            current = current.rightChild
         end
     end
-    return shapes
+
+    new_node.parent = parent
+
+    if key < parent.key
+        parent.leftChild = new_node
+    else
+        parent.rightChild = new_node
+    end
+
+    rebalance!(avl, new_node)
+end
+
+function height(node::Union{Node, Nothing})
+    if node === nothing
+        return -1
+    else
+        return 1 + max(height(node.leftChild), height(node.rightChild))
+    end
+end
+
+function rotate_right(node::Node)
+    new_root = node.leftChild
+    node.leftChild = new_root.rightChild
+    new_root.rightChild = node
+
+    if node.leftChild !== nothing
+        node.leftChild.parent = node
+    end
+
+    new_root.parent = node.parent
+
+    if node.parent === nothing
+        node.parent.root = new_root  # Assuming `node` is the root node of the AVLTree
+    elseif node.key < node.parent.key
+        node.parent.leftChild = new_root
+    else
+        node.parent.rightChild = new_root
+    end
+
+    node.parent = new_root
+    return new_root
+end
+
+function rotate_left(node::Node)
+    new_root = node.rightChild
+    node.rightChild = new_root.leftChild
+    new_root.leftChild = node
+
+    if node.rightChild !== nothing
+        node.rightChild.parent = node
+    end
+
+    new_root.parent = node.parent
+
+    if node.parent === nothing
+        node.parent.root = new_root  # Assuming `node` is the root node of the AVLTree
+    elseif node.key < node.parent.key
+        node.parent.leftChild = new_root
+    else
+        node.parent.rightChild = new_root
+    end
+
+    node.parent = new_root
+    return new_root
+end
+
+function rotate_left_right(node::Node)
+    node.leftChild = rotate_left(node.leftChild)
+    return rotate_right(node)
+end
+
+function rotate_right_left(node::Node)
+    node.rightChild = rotate_right(node.rightChild)
+    return rotate_left(node)
+end
+
+function rebalance!(avl::AVLTree, node::Node)
+    while node !== nothing
+        if height(node.leftChild) >= 2 + height(node.rightChild)
+            if height(node.leftChild.leftChild) >= height(node.leftChild.rightChild)
+                node = rotate_right(node)
+            else
+                node = rotate_left_right(node)
+            end
+        elseif height(node.rightChild) >= 2 + height(node.leftChild)
+            if height(node.rightChild.rightChild) >= height(node.rightChild.leftChild)
+                node = rotate_left(node)
+            else
+                node = rotate_right_left(node)
+            end
+        end
+
+        node = node.parent
+    end
 end
 
 
