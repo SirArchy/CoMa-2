@@ -1,66 +1,106 @@
-class ngonTriang:
-    def __init__(self, n, triangles):
-        if not self._is_triangulation(triangles):
-            raise ValueError("no triangulation")
-        self.n = n
-        self.triangles = sorted(triangles)
-        self.walls = self._calculate_walls()
-    
-    def _is_triangulation(self, triangles):
-        # Eine einfache Implementierung könnte überprüfen,
-        # ob die Anzahl der Dreiecke gleich n-2 ist und ob
-        # die Dreiecke die angegebenen Bedingungen erfüllen.
-        return len(triangles) == (self.n - 2)
-    
-    def _calculate_walls(self):
-        walls = set()
-        for triangle in self.triangles:
-            # Sortieren Sie die Ecken des Dreiecks, um konsistente Wand-Paare zu gewährleisten
-            edges = [sorted((triangle[i], triangle[(i+1) % 3])) for i in range(3)]
-            for edge in edges:
-                if edge in walls:
-                    walls.remove(edge)
-                else:
-                    walls.add(tuple(edge))
-        return sorted(list(walls))
-    
-    def n_walls(self):
-        return len(self.walls)
-    
-    def flip(self, wall):
-        if wall not in self.walls:
-            raise ValueError("Wall does not exist")
-        
-        # Finden der beiden Dreiecke, die an der Wand anliegen
-        adjacent_triangles = [t for t in self.triangles if set(wall).issubset(t)]
-        # Berechnen Sie das Viereck aus beiden Dreiecken und entfernen Sie die Wand
-        quad = set(adjacent_triangles[0]) | set(adjacent_triangles[1]) - set(wall)
-        # Bestimmung der alternativen Diagonale
-        alternative_diag = sorted(list(quad - set(wall)))
-        
-        # Erstellen der neuen Dreiecke mit der alternativen Diagonale
-        new_triangles = [t for t in self.triangles if set(wall).isdisjoint(t)]
-        new_triangles += [sorted(list(set(adjacent_triangles[0]) - set(wall) | set(alternative_diag[:1]))),
-                          sorted(list(set(adjacent_triangles[1]) - set(wall) | set(alternative_diag[1:])))]
-        
-        return ngonTriang(self.n, new_triangles)
+class Node:
+    def __init__(self, key):
+        self.key = key
+        self.leftChild = None
+        self.rightChild = None
+        self.parent = None
+        self.balanceFactor = 0 
 
-# Beispielaufrufe
-n = 4
-triangles = [[0, 1, 2], [0, 2, 3]]
-T = ngonTriang(n, triangles)
+class AVLTree:
+    def __init__(self, key):
+        self.root = Node(key)
 
-# Zugriff auf die Attribute und Methoden der Instanz T
-print(T.triangles)
-print(T.walls)
-print(T.n_walls())
+    def height(self, node):
+        if node is None:
+            return 0
+        return 1 + max(self.height(node.leftChild), self.height(node.rightChild))
 
-# Durchführen eines Flips und Ausgabe der neuen Triangulierung
-S = T.flip([0, 2])
-print(S.triangles)
+    def updateBalance(self, node):
+        if node:
+            node.balanceFactor = self.height(node.rightChild) - self.height(node.leftChild)
+            self.updateBalance(node.parent)
 
-# Versuch, eine ungültige Triangulierung zu erstellen
-try:
-    W = ngonTriang(n, [[0, 1, 2], [0, 2, 3], [1, 2, 3]])
-except ValueError as e:
-    print(e)
+    def rotateLeft(self, node):
+        newRoot = node.rightChild
+        node.rightChild = newRoot.leftChild
+        if newRoot.leftChild:
+            newRoot.leftChild.parent = node
+        newRoot.parent = node.parent
+        if node is self.root:
+            self.root = newRoot
+        else:
+            if node.parent.leftChild is node:
+                node.parent.leftChild = newRoot
+            else:
+                node.parent.rightChild = newRoot
+        newRoot.leftChild = node
+        node.parent = newRoot
+        self.updateBalance(node)
+        self.updateBalance(newRoot)
+
+    def rotateRight(self, node):
+        newRoot = node.leftChild
+        node.leftChild = newRoot.rightChild
+        if newRoot.rightChild:
+            newRoot.rightChild.parent = node
+        newRoot.parent = node.parent
+        if node is self.root:
+            self.root = newRoot
+        else:
+            if node.parent.rightChild is node:
+                node.parent.rightChild = newRoot
+            else:
+                node.parent.leftChild = newRoot
+        newRoot.rightChild = node
+        node.parent = newRoot
+        self.updateBalance(node)
+        self.updateBalance(newRoot)
+
+    def rebalance(self, node):
+        self.updateBalance(node)
+        if node.balanceFactor < -1:
+            if node.leftChild.balanceFactor > 0:
+                self.rotateLeft(node.leftChild)
+            self.rotateRight(node)
+        elif node.balanceFactor > 1:
+            if node.rightChild.balanceFactor < 0:
+                self.rotateRight(node.rightChild)
+            self.rotateLeft(node)
+        if node.parent:
+            self.rebalance(node.parent)
+        else:
+            self.root = node
+
+    def insert(self, key):
+        if not self.root:
+            self.root = Node(key)
+        else:
+            self.insert_node(self.root, key)
+
+    def insert_node(self, parent_node, key):
+        if key < parent_node.key:
+            if parent_node.leftChild is None:
+                parent_node.leftChild = Node(key)
+                parent_node.leftChild.parent = parent_node
+                self.rebalance(parent_node.leftChild)
+            else:
+                self.insert_node(parent_node.leftChild, key)
+        else:
+            if parent_node.rightChild is None:
+                parent_node.rightChild = Node(key)
+                parent_node.rightChild.parent = parent_node
+                self.rebalance(parent_node.rightChild)
+            else:
+                self.insert_node(parent_node.rightChild, key)
+
+
+avl=AVLTree(2)
+avl.insert(3)
+avl.visualize()
+avl.insert(4)
+avl.visualize()
+avl.insert(7)
+avl.insert(1)
+avl.visualize()
+avl.insert(8)
+avl.visualize()
