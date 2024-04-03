@@ -94,13 +94,3 @@ class AVLTree:
                 self.insert_node(parent_node.rightChild, key)
 
 
-avl=AVLTree(2)
-avl.insert(3)
-avl.visualize()
-avl.insert(4)
-avl.visualize()
-avl.insert(7)
-avl.insert(1)
-avl.visualize()
-avl.insert(8)
-avl.visualize()

@@ -1,6 +1,6 @@
 from collections import deque
 import subprocess
-from AVL import *
+from CoMa_Proggen_HA5 import *
 
 BASIS = \
     '\\documentclass[tikz]{{standalone}} \n\n\
@@ -84,3 +84,15 @@ class AVLTree(AVLTree):
         subprocess.call(['pdflatex', 'avl.tex'], stdout=subprocess.DEVNULL)
         subprocess.call(['evince', 'avl.pdf'])
         print('Finished')
+
+
+avl=AVLTree(2)
+avl.insert(3)
+avl.visualize()
+avl.insert(4)
+avl.visualize()
+avl.insert(7)
+avl.insert(1)
+avl.visualize()
+avl.insert(8)
+avl.visualize()
