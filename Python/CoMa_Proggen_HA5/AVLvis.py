@@ -84,3 +84,11 @@ class AVLTree(AVLTree):
         subprocess.call(['pdflatex', 'avl.tex'], stdout=subprocess.DEVNULL)
         subprocess.call(['evince', 'avl.pdf'])
         print('Finished')
+
+#avl=AVLTree(2)
+#avl.insert(3)
+#avl.insert(4)
+#avl.insert(7)
+#avl.insert(10)
+#avl.insert(8)
+#avl.visualize()
