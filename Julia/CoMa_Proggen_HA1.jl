@@ -1,59 +1,72 @@
-struct Node
-    key::Int
-    left::Union{Node, Nothing}
-    right::Union{Node, Nothing}
+# Definition des (nicht-mutablen) Typs Pfad
+struct Pfad
+    source::Real
+    target::Union{Real, Pfad}
+end
+
+# Konstruktoren für den Typ Pfad
+pfad(source::Real, target::Real)::Pfad = Pfad(source, target)
+pfad(source::Real, target::Pfad)::Pfad = Pfad(source, target)
+pfad(source::Real)::Pfad = Pfad(source, source)
+
+# Definition des Infix-Operators ⇒ für die zwei Konstruktor-Methoden
+Base.:⇒(source::Real, target::Real) = pfad(source, target)
+Base.:⇒(source::Real, target::Pfad) = pfad(source, target)
+
+# Überladen der show-Methode zur Ausgabe des Pfads
+function Base.show(io::IO, p::Pfad)
+    print(io, p.source)
+    t = p.target
+    while t isa Pfad
+        print(io, " ⇒ ", t.source)
+        t = t.target
+    end
+    if t isa Real
+        print(io, " ⇒ ", t)
+    end
+end
+
+# Hilfsfunktion, um das letzte Element in einem Pfad zu finden
+function target_end(p::Pfad)
+    while p.target isa Pfad
+        p = p.target
+    end
+    return p.target
+end
+
+# Hilfsfunktion, um das erste Element in einem Pfad zu finden
+function source_start(p::Pfad)
+    return p.source
+end
+
+# Überladen der *-Funktion zur Konkatenation von Pfaden
+function Base.:*(f::Pfad, g::Pfad)
+    # Überprüfen, ob die Endnummer des Pfades f dieselbe ist wie die Startnummer von Pfad g
+    @assert target_end(f) == source_start(g) "Letztes Element von f und erstes Element von g müssen übereinstimmen"
     
-    function Node(key::Int, left::Union{Node, Nothing}=nothing, right::Union{Node, Nothing}=nothing)
-        new(key, left, right)
+    # Konkatenation der Pfade
+    while f.target isa Pfad
+        f = f.target
     end
+    # f ist nun der letzte Knoten im Pfad f, also setzen wir sein target auf g
+    f = Pfad(f.source, g)
+    return f
 end
 
-# Methode zum Ausgeben der Knotenschlüssel
-function keys(node::Node)::Vector{Any}
-    if node.left === nothing && node.right === nothing
-        return [node.key]
-    elseif node.left === nothing
-        return vcat([node.key], keys(node.right))
-    elseif node.right === nothing
-        return vcat(keys(node.left), [node.key])
-    else
-        return vcat(keys(node.left), [node.key], keys(node.right))
-    end
-end
+x = pfad(1, 3)
+pfad(4, x)
 
-# Methode zur Berechnung der Höhe des Knotens
-function height(node::Node)
-    if node.left === nothing && node.right === nothing
-        return 1
-    elseif node.left === nothing
-        return 1 + height(node.right)
-    elseif node.right === nothing
-        return 1 + height(node.left)
-    else
-        return 1 + max(height(node.left), height(node.right))
-    end
-end
+x = 1 ⇒ 3
+4 ⇒ x
 
-# Methode zur Berechnung der Anzahl der Blätter
-function leaves(node::Node)
-    if node.left === nothing && node.right === nothing
-        return 1
-    elseif node.left === nothing
-        return leaves(node.right)
-    elseif node.right === nothing
-        return leaves(node.left)
-    else
-        return leaves(node.left) + leaves(node.right)
-    end
-end
+x = 1 ⇒ 3
+4 ⇒ x
 
-#= Beispielaufrufe
-ex1 = Node(1)
-ex2 = Node(2,Node(2,nothing,nothing),Node(2,nothing,Node(3)))
-println(height(ex2)) # prints 3
-println(height(ex1)) # prints 1
-println(keys(ex1)) # prints 1-element Vector{Any}: [1]
-println(keys(ex2)) # prints 4-element Vector{Any}: [2, 2, 2, 3]
-println(leaves(ex2)) # prints 2
+f = 4 ⇒ 1 ⇒ 3
+g = 3 ⇒ 6 ⇒ 8 ⇒ 9
 
-=#
+f * g
+f * ( 4 ⇒ 3 )
+
+# Bitte beachten Sie, dass Sie bei der Verwendung von * die target-Referenz von f ändern, die eigentlich geändert werden sollte, da dies das gewünschte Verhalten der Verkettung ist.
+# Bitte beachten Sie auch, dass die sprachübliche Mutation einer Eigenschaft einer 'struct' in diesem Fall nicht möglich ist, da 'structs' in Julia standardmäßig immutabel sind.

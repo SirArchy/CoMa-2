@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+# Beispiel einer Int-Vektorklasse
+
+>>>>>>> 5e58cffd2eda890382f8d07d72a1d8458ad7c0da
 import math
 
 class IntVektor:
@@ -49,45 +54,30 @@ class IntVektor:
     def copy(self):
         return IntVektor(self.x,self.y,self.z)
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5e58cffd2eda890382f8d07d72a1d8458ad7c0da
 class Teilgitter(IntVektor):
 
     def __init__(self, x, y, z):
-        super().__init__(x, y, z)
-        if z != 2*x + 5*y:
+        k1 = y
+        k2_x = x - 2 * k1
+        k2_z = (z - k1) / 5
+        if k2_x != k2_z or (z - k1) % 5 != 0:  # Überprüfe, ob k2 ganzzahlig ist
             raise ValueError("Vektor liegt nicht im Teilgitter.")
-        self.Koordinate_1 = x
-        self.Koordinate_2 = y
+        # Jetzt müssen wir k2 nur einmal berechnen, weil wir wissen, dass die anderen Bedingungen erfüllt sind.
+        k2 = k2_x
+        super().__init__(x, y, z)
+        self.Koordinate_1 = k1
+        self.Koordinate_2 = k2
 
     def __str__(self):
         return super().__str__() + "; Koordinate 1: {0}, Koordinate 2: {1}".format(self.Koordinate_1, self.Koordinate_2)
-
-    def __add__(self, other):
-        if isinstance(other, Teilgitter):
-            return Teilgitter(self.x + other.x, self.y + other.y, self.z + other.z)
-        else:
-            raise TypeError("Formate passen nicht.")
-
-    def __mul__(self, other):
-        if isinstance(other, Teilgitter):
-            return Teilgitter(self.x * other.x, self.y * other.y, self.z * other.z)
-        elif type(other) == int:
-            return Teilgitter(self.x * other, self.y * other, self.z * other)
-        else:
-            raise TypeError("Formate passen nicht.")
-
-    def __rmul__(self, other):
-        if isinstance(other, Teilgitter):
-            return Teilgitter(self.x * other.x, self.y * other.y, self.z * other.z)
-        elif type(other) == int:
-            return Teilgitter(self.x * other, self.y * other, self.z * other)
-        else:
-            raise TypeError("Formate passen nicht.")
-
-    def copy(self):
-        return Teilgitter(self.x, self.y, self.z)
     
 
 A=Teilgitter(10,3,23)
+<<<<<<< HEAD
 print(A) #( 1 0 , 3 , 2 3 ) ; Koordinate 1 : 3 , Koordinate 2 : 4
 #B = Teilgitter(14,4,34)
 #print(B) #( 1 4 , 4 , 3 4 ) ; Koordinate 1 : 4 , Koordinate 2 : 6
@@ -98,3 +88,8 @@ print(A) #( 1 0 , 3 , 2 3 ) ; Koordinate 1 : 3 , Koordinate 2 : 4
 #print(A*B) #934
 #print(A.copy()) #( 1 0 , 3 , 2 3 ) ; Koordinate 1 : 3 , Koordinate 2 : 4
 #print(Teilgitter(9, 5, 0)) #( 9 , 5 , 0 ) ; Koordinate 1 : 5 , Koordinate 2 : -1
+=======
+B = Teilgitter(14,4,34)
+print(A*B)
+#934
+>>>>>>> 5e58cffd2eda890382f8d07d72a1d8458ad7c0da
