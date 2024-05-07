@@ -1,84 +1,107 @@
-struct Set{T}
-    _elements::Vector{T}
+mutable struct Heap{T <: Real}
+    data::Vector{T}
+    comparator::Function
 
-    function Set(V::Vector{T}) where T
-        new{T}(sort(V))
-    end
-end
-
-function Base.show(io::IO, s::Set)
-    print(io, sort(s._elements))
-end
-
-struct Partition{T}
-    sets::Vector{Set{T}}
-
-    function Partition(V::Vector{T}) where T
-        elements = Set{T}[]
-        for tup in V
-            if any(isequal(tup) in map(y -> y._elements, elements))
-                throw(ArgumentError("invalid operation"))
-            end
-            push!(elements, Set([tup]))
+    # Inner constructor checking for comparator method and return type
+    function Heap{T}(data::Vector{T}, comparator::Function) where T <: Real
+        if !hasmethod(comparator, Tuple{T, T})
+            throw(AssertionError("Comparator is not defined for arguments of type $T."))
         end
-        new{T}(elements)
+
+        if !all(rt -> rt <: Bool, Base.return_types(comparator, Tuple{T, T}))
+            throw(AssertionError("Comparator does not return a Bool value."))
+        end
+
+        new{T}(data, comparator)
+    end
+
+    # Inner constructor with default comparator
+    function Heap{T}(data::Vector{T}) where T <: Real
+        new{T}(data, >=)
     end
 end
 
-function Base.show(io::IO, p::Partition)
-    print(io, map(s -> s._elements, p.sets))
+# Outer constructor with default comparator
+Heap(data::Vector{T}) where T <: Real = Heap{T}(data, >=)
+
+# Outer constructor with a custom comparator
+heap(data::Vector{T}, comparator::Function) where T <: Real = begin
+    h = Heap{T}(data, comparator)
+    heapify!(h)
 end
 
-function MakeSet!(p::Partition, tup)
-    if any(isequal(tup) in map(y -> y._elements, p.sets))
-        throw(ArgumentError("invalid operation"))
-    end
-    push!(p.sets, Set([tup]))
-end
-
-function FindSet(p::Partition, tup)
-    for s in p.sets
-        if tup in s._elements
-            return s._elements[1]
+function isHeap(heap::Heap{T}) where T <: Real
+    for i in 2:length(heap.data)
+        if !heap.comparator(heap.data[i ÷ 2], heap.data[i])
+            return false
         end
     end
-    throw(ArgumentError("invalid operation"))
+    return true
 end
 
-function Union!(p::Partition, tup1, tup2)
-    set1_index = set2_index = nothing
-    for (index, s) in enumerate(p.sets)
-        if tup1 in s._elements
-            set1_index = index
-        elseif tup2 in s._elements
-            set2_index = index
+function siftDown!(heap::Heap{T}, i::Int, max::Int) where T
+    while i * 2 <= max
+        child = i * 2
+        if child < max && !heap.comparator(heap.data[child], heap.data[child + 1])
+            child += 1
         end
+        if heap.comparator(heap.data[i], heap.data[child])
+            return
+        end
+        heap.data[i], heap.data[child] = heap.data[child], heap.data[i]
+        i = child
     end
-
-    if isnothing(set1_index) || isnothing(set2_index)
-        throw(ArgumentError("invalid operation"))
-    end
-
-    set1 = p.sets[set1_index]
-    set2 = p.sets[set2_index]
-    new_set_elements = union(set1._elements, set2._elements)
-    new_set = Set(new_set_elements)
-
-    deleteat!(p.sets, [set1_index, set2_index])
-    push!(p.sets, new_set)
 end
 
-# Example usage
-S = Partition([(0,3), (0,1), (1,3), (1,0)])
-Union!(S, (1,3), (0,1))
-Union!(S, (0,3), (0,1))
-println(S)
-println(FindSet(S, (1,3)))
-MakeSet!(S, (300,1))
-Union!(S, (300,1), (0,1))
-println(S)
-println(FindSet(S, (300,1)))
-MakeSet!(S, (0,0))
-Union!(S, (0,0), (0,1))
-println(S)
-println(FindSet(S, (300,1)))
+function heapify!(heap::Heap{T}) where T <: Real
+    for i in reverse(1:length(heap.data) ÷ 2)
+        siftDown!(heap, i, length(heap.data))
+    end
+    heap
+end
+
+function heapSort!(heap::Heap{T}) where T <: Real
+    heapify!(heap) # Ensure the heap property
+    for max in reverse(1:length(heap.data))
+        heap.data[1], heap.data[max] = heap.data[max], heap.data[1]
+        siftDown!(heap, 1, max - 1)
+    end
+    # The heap is now sorted in increasing order
+    reverse!(heap.data) # Return the heap data in normal order
+    heap
+end
+
+function heapSort!(data::Vector{T}, comparator::Function) where T <: Real
+    heap = heap(data, comparator) # Create a heap and heapify it
+    heapSort!(heap) # Sort the heap
+    heap.data # Return sorted data
+end
+
+function maximum(heap::Heap{T})::Union{T, Nothing} where T <: Real
+    return isempty(heap.data) ? nothing : heap.data[1]
+end
+
+#=
+Beispielcomparator(x,y) = x >= y
+Beispielcomparator(1,2)
+
+mutable struct IchBinEinStruct{T <:Real}
+    field::T
+    end
+IchBinEinStruct{Int}(1)
+
+is__Heap(Heap([1,2,3,4,5,6,7], comparator=(x,y)->x>=y))
+is__Heap(Heap([1,2,3,4,5,6,7], comparator=(x,y)->x<=y))
+
+heapify!(Heap([1,2,3,4,5,6,7], comparator=(x,y)->x>=y))
+heapify!(Heap([1,2,3,4,5,6,7], comparator=(x,y)->x<=y))
+
+heap([1,2,3,4,5,6,7], comparator=(x,y)->x>=y)
+
+h1 = heap([1,2,3,4,5,6,7], comparator=(x,y)->x>=y)
+heapSort!(h1)
+
+heapSort!([1,7,3,5,6,4,2])
+
+maximum(heap([1,7,3,5,6,4,2], comparator=(x,y)->x>=y))
+=#
