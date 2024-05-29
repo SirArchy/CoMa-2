@@ -1,195 +1,117 @@
-mutable struct Node
-    key::Int
-    leftChild::Union{Node, Nothing}
-    rightChild::Union{Node, Nothing}
-    parent::Union{Node, Nothing}
-
-    Node(key::Int) = new(key, nothing, nothing, nothing)
+# Definieren des Node-structs
+struct Node
+    value::Union{Char,Nothing}
+    freq::Int
+    left::Union{Node,Nothing}
+    right::Union{Node,Nothing}
 end
 
-mutable struct AVLTree
-    root::Node
-
-    AVLTree(key::Int) = new(Node(key))
-end
-
-function insert!(avl::AVLTree, key::Int)
-    new_node = Node(key)
-    current = avl.root
-    parent = nothing
-
-    while current !== nothing
-        parent = current
-        if key < current.key
-            current = current.leftChild
+# Implementierung der Funktion, um die Häufigkeiten zu ermitteln
+function getFrequencies(text::String)::Dict{Char,Int}
+    freqs = Dict{Char,Int}()
+    for char in text
+        if haskey(freqs, char)
+            freqs[char] += 1
         else
-            current = current.rightChild
+            freqs[char] = 1
         end
     end
+    return freqs
+end
 
-    new_node.parent = parent
+# Implementierung der Funktion findLowestTwo
+function findLowestTwo(q1::Vector{Node}, q2::Vector{Node})::Tuple{Node, Node}
+    node1 = popfirst!(q1)
+    node2 = isempty(q2) ? popfirst!(q1) : popfirst!(q2)
+    
+    if isempty(q1) && !isempty(q2) && node2.freq < node1.freq
+        return (node2, node1)
+    end
+    return (node1, node2)
+end
 
-    if key < parent.key
-        parent.leftChild = new_node
+# Implementierung der Funktion, um den Huffman-Baum zu erzeugen
+function huffman_tree(freqs::Dict{Char,Int})::Node
+    q1 = [Node(char, freq, nothing, nothing) for (char, freq) in sort(collect(freqs), by=x->x[2])]
+    q2 = Vector{Node}()
+    while length(q1) + length(q2) > 1
+        node1, node2 = findLowestTwo(q1, q2)
+        combined_node = Node(nothing, node1.freq + node2.freq, node1, node2)
+        push!(q2, combined_node)
+    end
+    return isempty(q1) ? popfirst!(q2) : popfirst!(q1)
+end
+
+# Helper function to recursively build Huffman Code map
+function build_huffman_code(node::Node, code::String, code_map::Dict{Char, String})
+    if node.value !== nothing
+        code_map[node.value] = code
     else
-        parent.rightChild = new_node
-    end
-
-    rebalance!(avl, new_node)
-end
-
-function height(node::Union{Node, Nothing})
-    if node === nothing
-        return -1
-    else
-        return 1 + max(height(node.leftChild), height(node.rightChild))
-    end
-end
-
-function rotate_right(node::Node)
-    new_root = node.leftChild
-    node.leftChild = new_root.rightChild
-    new_root.rightChild = node
-
-    if node.leftChild !== nothing
-        node.leftChild.parent = node
-    end
-
-    new_root.parent = node.parent
-
-    if node.parent === nothing
-        node.parent.root = new_root  # Assuming `node` is the root node of the AVLTree
-    elseif node.key < node.parent.key
-        node.parent.leftChild = new_root
-    else
-        node.parent.rightChild = new_root
-    end
-
-    node.parent = new_root
-    return new_root
-end
-
-function rotate_left(node::Node)
-    new_root = node.rightChild
-    node.rightChild = new_root.leftChild
-    new_root.leftChild = node
-
-    if node.rightChild !== nothing
-        node.rightChild.parent = node
-    end
-
-    new_root.parent = node.parent
-
-    if node.parent === nothing
-        node.parent.root = new_root  # Assuming `node` is the root node of the AVLTree
-    elseif node.key < node.parent.key
-        node.parent.leftChild = new_root
-    else
-        node.parent.rightChild = new_root
-    end
-
-    node.parent = new_root
-    return new_root
-end
-
-function rotate_left_right(node::Node)
-    node.leftChild = rotate_left(node.leftChild)
-    return rotate_right(node)
-end
-
-function rotate_right_left(node::Node)
-    node.rightChild = rotate_right(node.rightChild)
-    return rotate_left(node)
-end
-
-function rebalance!(avl::AVLTree, node::Node)
-    while node !== nothing
-        if height(node.leftChild) >= 2 + height(node.rightChild)
-            if height(node.leftChild.leftChild) >= height(node.leftChild.rightChild)
-                node = rotate_right(node)
-            else
-                node = rotate_left_right(node)
-            end
-        elseif height(node.rightChild) >= 2 + height(node.leftChild)
-            if height(node.rightChild.rightChild) >= height(node.rightChild.leftChild)
-                node = rotate_left(node)
-            else
-                node = rotate_right_left(node)
-            end
+        if node.left !== nothing
+            build_huffman_code(node.left, code * "0", code_map)
         end
-
-        node = node.parent
+        if node.right !== nothing
+            build_huffman_code(node.right, code * "1", code_map)
+        end
     end
 end
 
+# Hilfsfunktion, um das Huffman-Codebuch zu erstellen
+function huffman_codebook(tree::Node)::Dict{Char, String}
+    code_map = Dict{Char, String}()
+    build_huffman_code(tree, "", code_map)
+    return code_map
+end
+
+# Implementierung der Funktion Encode
+function Encode(text::String, code::Dict{Char, String})::String
+    encoded = String[]
+    for char in text
+        push!(encoded, code[char])
+    end
+    return join(encoded)
+end
+
+# Implementierung der Funktion Decode
+function Decode(encoded::String, tree::Node)::String
+    decoded_chars = Char[] 
+    current = tree        
+    for bit in encoded
+        if bit == '0'
+            current = current.left
+        else
+            current = current.right
+        end
+        if current.value !== nothing
+            push!(decoded_chars, current.value) 
+            current = tree  
+        end
+    end
+    return join(decoded_chars) 
+end
+
+# Beispielaufrufe
+#Example = "Wenn der Physiker nicht weiter weiß, gründet er ein Arbeitskreis"
+#freqs = getFrequencies(Example)
+#hufftree = huffman_tree(freqs)
+#huffcode = huffman_codebook(hufftree)
+#encoded = Encode(Example, huffcode)
+#decoded = Decode(encoded, hufftree)
+
+#Example = "Warum sind da Limetten bei den Tomaten?"
+#freqs = getFrequencies(Example)
+#hufftree = huffman_tree(freqs)
+#huffcode = huffman_codebook(hufftree)
+#encoded = Encode(Example, huffcode)
+#decoded = Decode(encoded, hufftree)
 
 
-#✅
-#❌
-# Beispielverwendung
-t1 = FactorTree(20)
-t2 = FactorTree(945)
-t4 = FactorTree(72)
-t5 = FactorTree(6375)
-t6 = FactorTree(216)
-t7 = FactorTree(112)
-
-#=
-#(945, 2205, 2835, 112) 
-#(2396, 4852, 7188, 2024)
-#(8909, 6411, 26727, 2625)
-println(getShape(t1))
-println(getShape(t2))
-println(compareShape(t1, t2))
-println(getShape(t1))
-println(getShape(t4))
-println(compareShape(t1, t4))
-println(compareShape(t4, t2))
-println(compareShape(t4, t6))
-println(compareShape(t5, t7))
-println(compareShape(t4, t7))
-=#
-println(computeShapes(20))
-println(computeShapes(945))
-println(computeShapes(72))
-println(computeShapes(6375))
-println(computeShapes(216))
-println(computeShapes(112))
-
-println(t1)
-println(t2)
-println(t4)
-println(t5)
-println(t6)
-println(t7)
-
-
-#=
-Zusammenfassung:
-Test Summary:                       | Pass  Fail  Total
-PA05                                |   36     8     44
-  input = (72, 6375, 216, 112)      |    9     2     11
-    Zerlegungsbaum                  |    9     2     11  1.0s
-      Primfaktorzerlegung           |    3            3  0.0s
-      getShape                      |    2            2  0.0s
-      compareShape                  |    2     1      3  0.9s
-      computeShapes                 |    2     1      3  0.1s
-  input = (945, 2205, 2835, 112)    |    9     2     11
-    Zerlegungsbaum                  |    9     2     11  0.0s
-      Primfaktorzerlegung           |    3            3  0.0s
-      getShape                      |    2            2  0.0s
-      compareShape                  |    2     1      3  0.0s
-      computeShapes                 |    2     1      3  0.0s
-  input = (2396, 4852, 7188, 2024)  |    9     2     11
-    Zerlegungsbaum                  |    9     2     11  0.0s
-      Primfaktorzerlegung           |    3            3  0.0s
-      getShape                      |    2            2  0.0s
-      compareShape                  |    2     1      3  0.0s
-      computeShapes                 |    2     1      3  0.0s
-  input = (8909, 6411, 26727, 2625) |    9     2     11
-    Zerlegungsbaum                  |    9     2     11  0.0s
-      Primfaktorzerlegung           |    3            3  0.0s
-      getShape                      |    2            2  0.0s
-      compareShape                  |    2     1      3  0.0s
-      computeShapes                 |    2     1      3  0.0s
-=#
+#Die Abgabe war nicht erfolgreich. Das Programm hatte einen Laufzeitfehler.
+#
+#Fehler in den öffentlichen Testinstanzen:
+#Es wurde für 2 von 8(25.0%) der Testinstanzen eine Lösung berechnet.
+#Letzte versuchte Instanz:
+#Input: Warum sind da Limetten bei den Tomaten?
+#Erwarteter Output: Testing the Encode Function:
+#111111101110011111110111100101001111110111101100111010011101110101111110111100100001100110001101011111000111101001110001101001111101111111100101110011000110111111111
+#Fehler: UndefVarError
