@@ -5,17 +5,17 @@ end
 
 # Konstruktorfunktionen
 
-# 1. Konstruiert einen Pfad, der nur aus einer Kante besteht.
+# 1. Konstruiert einen Pfad, der nur aus einer Kante besteht
 function pfad(source::Real, target::Real)::Pfad
     return Pfad(source, target)
 end
 
-# 2. Konstruiert einen Pfad, der aus einem Pfad besteht und diesen am Anfang um eine Zahl erweitert.
+# 2. Konstruiert einen Pfad, der aus einem Pfad besteht und diesen am Anfang um eine Zahl erweitert
 function pfad(source::Real, target::Pfad)::Pfad
     return Pfad(source, target)
 end
 
-# 3. Erstellt einen Pfad aus einem einzelnen Knoten, der sowohl source als auch target ist.
+# 3. Erstellt einen Pfad aus einem einzelnen Knoten, der sowohl source als auch target ist
 function pfad(source::Real)::Pfad
     return Pfad(source, source)
 end
@@ -38,26 +38,26 @@ function Base.show(io::IO, p::Pfad)
     end
 end
 
-# Überladen der *(Funktion für die Konkatenation von Pfaden)
+# Überladen der * Funktion
 
 function *(f::Pfad, g::Pfad)::Pfad
-    # Ermittle den echten Zielwert von f.
-    target_of_f = f.target
-    while isa(target_of_f, Pfad)
-        target_of_f = target_of_f.target
+    # Ermittle des echten Zielwerts von f
+    target_von_f = f.target
+    while isa(target_von_f, Pfad)
+        target_von_f = target_von_f.target
     end
     
-    @assert target_of_f == g.source "Die letzte Zahl von f und die erste Zahl von g stimmen nicht überein."
+    @assert target_von_f == g.source "Die letzte Zahl von f und die erste Zahl von g stimmen nicht überein."
 
-    function appendtarget(f::Pfad, newtarget::Union{Real, Pfad})
+    function targetAnfügen(f::Pfad, neuesTarget::Union{Real, Pfad})
         if isa(f.target, Real)
-            return Pfad(f.source, newtarget)
+            return Pfad(f.source, neuesTarget)
         else
-            return Pfad(f.source, appendtarget(f.target, newtarget))
+            return Pfad(f.source, targetAnfügen(f.target, neuesTarget))
         end
     end
     
-    return appendtarget(f, g)
+    return targetAnfügen(f, g)
 end
 
 

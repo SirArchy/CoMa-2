@@ -45,6 +45,7 @@ function tree2vec(node::Node)::Vector{Union{Int, Nothing}}
     h = height(node)
     max_elements = 2^h - 1
     vec = Vector{Union{Int, Nothing}}(nothing, max_elements)
+    # Wandelt den Baum des Index i zu einem Vector um
     function inner_tree2vec(node::MaybeNode, vec::Vector{Union{Int, Nothing}}, i::Int)
         if node === nothing
             return
@@ -59,6 +60,7 @@ end
 
 # Wandelt einen Vector in einen Baum um.
 function vec2tree(vec::Vector{Union{Int, Nothing}})::MaybeNode
+    # Wandelt den Vector des Index i zu einem Knoten um
     function inner_vec2tree(i::Int)::MaybeNode
         if i > length(vec) || vec[i] === nothing
             return nothing
